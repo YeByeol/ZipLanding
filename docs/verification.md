@@ -235,3 +235,9 @@ v2.2 공개 배포 확인:
 - axe320px 비교 표 **47 passes/0 violations/1 incomplete**, 마무리 **42/0/1**. 남은 incomplete는 중첩 그래픽의 자동 배경 대비 판정이며 실제 읽기 표면을 확인했다. Impeccable 결과는 확정된 점수 보라색4개와 실제 내부 padding이 있는 wrapper2개에 대한 warning만 남았다.
 
 검증은 실제 브라우저·WebGL/SVG·viewport 범위이며 실물 휴대폰 FPS·배터리나 의학적인 눈 피로 개선을 측정하지 않았다. 새 라이브러리·테마·실거래 데이터는 추가하지 않았다.
+
+v2.3 공개 배포 확인:
+
+- 소스 `2965f127022d5e2e7e3df4aaaf958091ff7f2448`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43179365177 — completed / success.
+- https://yebyeol.github.io/ZipLanding/ 공개 새 기능 **20/20**, 전체8장 궤적 **14/14** 통과. 실제 연결선/가격 비율, 모바일 표·선택기, 마지막 버튼과 focus/scroll 복귀를 다시 확인했다.
+- HTML·CSS·앱 모듈·Three·브랜드/그림/글꼴 자산 **22개 HTTP200/로컬 검증 소스와 바이트 일치**.

@@ -25,4 +25,4 @@ Spec: `../specs/2026-11-12-zip-connected-film-refinement.md`. 확정된8장 구�
 - [x] 실제 가격 비율과 필드, 투영 좌표→stage→데이터 연결을 기존 snapshot에 연결한다. 애니메이션 중 DOM 위치도 매 frame 반영하고 lifecycle 구독 해제.
 - [x] 장면 선택기와 closing opener의 기존 native dialog 복귀를 연결한다.
 - [x] 새 핵심 로직 검사, 기존42개 회귀,5width·전체 실제 motion/역방향/clip/초기화/resize/SVG/reduced/keyboard·독립 검토.
-- [ ] source commit/main/Pages 공개, Actions 성공·공개 파일/동작 readback, receipt/branch/browser 정리.
+- [x] source commit/main/Pages 공개, Actions 성공·공개 파일/동작 readback, receipt/branch/browser 정리. Source2965f12, Actions43179365177, 공개20+14개 검사와22개 파일 byte-match.
