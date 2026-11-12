@@ -1,3 +1,4 @@
+import { PHASES, storyTimeline } from './story-timeline.mjs';
 export const DEFAULT_VIEW = Object.freeze({ yaw: .72, pitch: .68 });
 export const clampProgress = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 export const clampZoom = value => Number.isFinite(value) ? Math.max(.75, Math.min(1.6, value)) : 1;
@@ -50,18 +51,14 @@ export function presentationForProgress(progress, building, { reduced = false } 
   const valid = building && [building.x, building.y, building.height].every(Number.isFinite) && building.height >= 0;
   const selected = valid ? { ...buildingPosition(building), y: building.height / 78 + .14 } : center;
   const frames = [
-    { at: 0, yaw: .72, pitch: .68, zoom: 1, target: center },
-    { at: .3, yaw: .5, pitch: .86, zoom: 4.2, target: selected },
-    { at: .62, yaw: .95, pitch: .8, zoom: 1.05, target: center },
-    { at: 1, yaw: .12, pitch: 1.08, zoom: 1.1, target: center },
+    { yaw: .72, pitch: .68, zoom: 1, target: center },
+    { yaw: .62, pitch: .80, zoom: 3.2, target: selected },
+    { yaw: .72, pitch: .76, zoom: 1.05, target: center },
+    { yaw: .56, pitch: .92, zoom: 1.05, target: center },
   ];
-  const p = reduced ? 0 : clampProgress(progress);
-  const exact = frames.find(frame => frame.at === p);
-  if (exact) return clampPresentation(exact);
-  const index = frames.findIndex(frame => frame.at > p);
-  const from = frames[index - 1], to = frames[index];
-  const amount = (p - from.at) / (to.at - from.at);
-  const mix = (a, b) => a + (b - a) * amount;
+  const timeline = storyTimeline(reduced ? 0 : progress);
+  const from = frames[PHASES.indexOf(timeline.from)], to = frames[PHASES.indexOf(timeline.to)];
+  const mix = (a, b) => a + (b - a) * timeline.blend;
   return clampPresentation({
     yaw: mix(from.yaw, to.yaw), pitch: mix(from.pitch, to.pitch), zoom: mix(from.zoom, to.zoom),
     target: Object.fromEntries(['x', 'y', 'z'].map(key => [key, mix(from.target[key], to.target[key])])),

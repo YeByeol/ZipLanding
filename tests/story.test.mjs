@@ -75,13 +75,13 @@ test('story controller changes only its view, shares computed fields, and suppre
   assert.equal(view.sceneStates.length, calls);
   assert.equal(view.progress.length, cameras);
   for (const [tops, phase, mode] of [
-    [[-400, 400, 1200, 2000], 'conditions', 'terrain'], [[-1200, -400, 400, 1200], 'criteria', 'score'],
-    [[-2000, -1200, -400, 400], 'value', 'price'], [[-400, 400, 1200, 2000], 'conditions', 'terrain'],
+    [[-720, 80, 880, 1680], 'conditions', 'terrain'], [[-1560, -760, 40, 840], 'criteria', 'score'],
+    [[-2400, -1600, -800, 0], 'value', 'price'], [[-720, 80, 880, 1680], 'conditions', 'terrain'],
   ]) {
     view.setTops(tops); view.controller.updateScroll({ reduced: false });
     assert.equal(view.root.dataset.storyPhase, phase);
     assert.equal(view.element.dataset.storyMode, mode);
-    assert.equal(view.sceneStates.at(-1).mode, mode);
+    assert.equal(view.sceneStates.length, calls, 'logical chapters never write physical renderer state');
     assert.equal(view.panels.filter(panel => !panel.hidden)[0].dataset.storyPanel, phase);
     assert.equal(view.links.find(link => link.getAttribute('aria-current') === 'step').dataset.storyLink, phase);
     assert.deepEqual(view.swatches.map(item => item.style.backgroundColor), PALETTES[mode]);
@@ -97,21 +97,21 @@ test('story controller changes only its view, shares computed fields, and suppre
 test('reduced motion keeps current phase information and missing fields, with a stationary camera', () => {
   const view = fixture();
   view.controller.update({ mode: 'score', selected: 'x', saved: ['x'], weights: { slope: 50, elevation: 50, age: 50 } });
-  view.setTops([-1200, -400, 400, 1200]);
+  view.setTops([-1560, -760, 40, 840]);
   view.controller.updateScroll({ reduced: true });
   assert.equal(view.root.dataset.storyPhase, 'criteria');
-  assert.equal(view.sceneStates.at(-1).mode, 'score');
+  assert.equal(view.progress.at(-1).colorBlend.from, 'score');
   assert.equal(view.fields.find(item => item.dataset.storyField === 'score').textContent, '자료 없음');
   assert.equal(view.fields.find(item => item.dataset.storyField === 'slope').textContent, '자료 없음');
   assert.match(view.caption.textContent, /보라/);
   assert.ok(view.fields.filter(field => ['slope', 'elevation', 'year', 'score'].includes(field.dataset.storyField)).every(field => field.dataset.missing === 'true'));
   assert.ok(view.units.every(unit => unit.hidden), 'missing values hide all repeated numeric units');
   assert.equal(view.progress.at(-1).zoom, 1);
-  view.setTops([-400, 400, 1200, 2000]);
+  view.setTops([-720, 80, 880, 1680]);
   view.controller.updateScroll({ reduced: true });
   assert.equal(view.root.dataset.storyPhase, 'conditions');
-  assert.equal(view.sceneStates.at(-1).mode, 'terrain');
-  assert.equal(view.progress.length, 1, 'reduced motion does not repeat stationary frames');
+  assert.equal(view.progress.at(-1).colorBlend.from, 'terrain');
+  assert.deepEqual(view.progress.at(-1).target, { x: 0, y: .28, z: 0 }, 'reduced motion keeps a wide pose while semantic colors change');
   view.controller.update({ mode: 'score', selected: 'a', saved: ['a'], weights: { slope: 50, elevation: 50, age: 50 } });
   assert.ok(view.fields.every(field => field.dataset.missing === 'false'));
   assert.ok(view.units.every(unit => !unit.hidden), 'choosing valid values restores every numeric unit');
@@ -119,22 +119,23 @@ test('reduced motion keeps current phase information and missing fields, with a 
 
 
 
-test('low viewport height exposes every panel, keeps values current and stops camera work', () => {
+test('low height actively restores wide framing and reentry reapplies the current scroll frame', () => {
   const view = fixture();
-  view.setLowHeight(true);
-  view.controller.updateScroll();
+  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
+  view.setTops([-720, 80, 880, 1680]); view.controller.updateScroll();
+  assert.equal(view.progress.at(-1).zoom, 3.2);
+  view.setLowHeight(true); view.controller.updateScroll();
   assert.equal(view.root.dataset.storyEnhanced, 'false');
-  assert.ok(view.panels.every(panel => !panel.hidden && panel.getAttribute('aria-hidden') === 'false'));
-  assert.equal(view.progress.length, 0);
+  assert.ok(view.panels.every(panel => !panel.hidden && panel.style.opacity === '1' && panel.getAttribute('aria-hidden') === 'false'));
+  assert.equal(view.progress.at(-1).zoom, 1);
+  const count = view.progress.length;
   view.controller.update({ selected: 'x', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
   assert.equal(view.fields.find(field => field.dataset.storyField === 'score').textContent, '자료 없음');
-  assert.equal(view.progress.length, 0);
-  view.setLowHeight(false);
-  view.controller.updateScroll();
+  assert.equal(view.progress.length, count, 'the wide frame stays idle while low height fields update');
+  view.setLowHeight(false); view.controller.updateScroll();
   assert.equal(view.root.dataset.storyEnhanced, 'true');
   assert.equal(view.panels.filter(panel => !panel.hidden).length, 1);
-  assert.equal(view.progress.length, 1);
-  assert.equal(view.root.dataset.storyActive, undefined);
+  assert.equal(view.progress.at(-1).zoom, 3.2);
   view.controller.destroy();
   assert.equal(view.root.dataset.storyEnhanced, undefined);
   assert.ok(view.panels.every(panel => !panel.hidden));
@@ -147,7 +148,7 @@ test('camera begins wide at first waypoint and retargets selected buildings at c
   assert.equal(view.progress.at(-1).zoom, 1);
   view.setTops([-720, 80, 880, 1680]);
   view.controller.updateScroll();
-  assert.equal(view.progress.at(-1).zoom, 4.2);
+  assert.equal(view.progress.at(-1).zoom, 3.2);
   assert.ok(Math.abs(view.progress.at(-1).target.x + 2.975) < 1e-12);
   view.controller.update({ selected: 'b', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
   assert.ok(Math.abs(view.progress.at(-1).target.x + 1.845) < 1e-12);
@@ -163,4 +164,26 @@ test('twenty peers stay a three-place preview and retain an explicit remaining c
   assert.equal((text.match(/장소 /g) ?? []).length, 3);
   assert.match(text, /외 17곳/);
   assert.ok(text.length < 100);
+});
+
+
+test('panels fade through a quiet middle and jitter changes no logical metadata', () => {
+  const view = fixture();
+  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
+  const seek = p => { view.setTops([0,800,1600,2400].map(top => top - p * 2400)); view.controller.updateScroll(); };
+  seek(1/6 - .03);
+  assert.ok(+view.panels[0].style.opacity > 0 && +view.panels[0].style.opacity < 1);
+  assert.equal(view.panels[0].hidden, false);
+  assert.equal(view.panels[1].hidden, true);
+  seek(1/6);
+  assert.ok(view.panels.every(panel => panel.hidden));
+  assert.equal(+view.caption.style.opacity, 0);
+  const phase = view.root.dataset.storyPhase;
+  for (const p of [1/6 + .001, 1/6 - .001, 1/6 + .002]) { seek(p); assert.equal(view.root.dataset.storyPhase, phase); }
+  seek(1/6 + .03);
+  assert.equal(view.panels[1].hidden, false);
+  assert.ok(+view.panels[1].style.opacity > 0 && +view.panels[1].style.opacity < 1);
+  const frame = view.progress.at(-1);
+  seek(1); seek(1/6 + .03);
+  assert.deepEqual(view.progress.at(-1), frame, 'reverse scroll uses the identical physical frame');
 });

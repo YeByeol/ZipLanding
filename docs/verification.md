@@ -148,3 +148,29 @@ v2.0 공개 배포 확인:
 - Actions https://github.com/YeByeol/ZipLanding/actions/runs/43164237428 — completed / success.
 - https://yebyeol.github.io/ZipLanding/ 공개 브라우저 **6/6**: 새 전폭 hero, 실제 장 링크의 확대 전환, 넓은 점수 전환, 위에서 보는 가격 전환, 실제 키보드 중요도 조작,390px overflow 없음.
 - 공개 HTML·CSS·main·motion·story·scene3d·scene-model **7개 HTTP200/로컬 검증 소스와 바이트 일치**.
+
+## v2.1 장면 경계와 전체 읽기 리듬 수정
+
+사용자가 지적한 깜빡임을 실제 경계 왕복으로 재현했다. v2.0에서는 스크롤 −1→+1px에서 도시 영역이 x0→403.19px, y341.11→109.11px, 높이658.88→779.52px로 순간 교체됐다. 경계 주변 여섯 샘플에서 장 표시가 세 번 바뀌었다. 당시 정지 화면 검증으로 이 불연속을 발견하지 못했다. 새 설계는 `superpowers/specs/2026-11-12-zip-comfortable-motion.md`에 기록했다.
+
+수정:
+
+- 모든 장에 같은 도시 viewport와 제목·수치 영역을 사용한다. 장마다 CSS 위치·크기를 바꾸지 않고 카메라만 이동한다.
+- 하나의 순수 timeline에서 카메라·RGB 색·범례·문구 opacity를 계산한다. 장 사이에서만 quintic 전환하고, 각 장은 읽는 동안 정지한다. 소개 확대는3.2배로 낮췄다.
+- 장 표시의 경계에 hysteresis를 두고, 물리적인 화면은 이력에 관계없이 같은 진행값에서 같은 상태를 그린다. 제목은 같은 위치에서 순서대로 사라지고 나타나며 도시·배경은 fade하지 않는다.
+- 소개의 DOM/3D는 같은 task에서 그린다. 직접 조작하는 체험의 damping·수동 camera 우선은 유지한다. SVG·WebGL·범례는 같은 색 계산과 결측 빗금 보간을 사용한다.
+- 소개부터 체험·비교·근거·마무리까지 짙은 외곽 바탕을 유지하고 실제 제품 UI는 밝은 영역에 둔다. 반복 section 등장 효과를 제거했다. 새 의존성은 없다.
+
+최종 로컬 검증:
+
+- Node **39/39**, 전체 모듈 문법 검사, SVG 내보내기, diff 검사 통과. 독립 read-only 검토에서 차단 결함 없음.
+- 실제 브라우저 연속성 **10/10**. 세 경계±0.5/±2px 왕복·32지점 전진/역방향·빠른0↔1 seek에서 viewport와 canvas buffer 크기 불변, 경계 장/mode 반복 토글 없음, 같은 진행값의 camera/color/opacity 일치, reading hold 정지·동일 canvas 유지.
+- 실제 WebGL draw 계측: 시각 상태가 바뀐 **21개 RAF callback 모두 같은 callback 안에서 GPU draw**가 발생했다. 정지 후300ms 동안 추가 story draw0. FPS 측정은 아니다.
+- 실제 기능 **21/21**: 중요도 키보드, 선택·동일ID·계산 공유, 결측·단위, 담기/비교 빈 상태·focus, 공유 실패 대안·복귀, 초기화, reduced 정보/정지 camera, scroll의 제품 state/URL 불변.
+- 최종 native 장 링크6회 전환·역방향과 하단5곳·마무리 CTA 복귀를 녹화했다. 작은 경계 왕복·동일 진행값의 전후 상태는 별도 trace로 확인했으며 영상의 정지 캡처만으로 연속성을 판단하지 않았다.
+- 1440×900·768×1024·390×844·375×667·320×640의4개 hold, 총20개 실제 캡처에서 copy→그림→수치→범례/조작 영역 분리와 장별 동일 rect를 확인했다. 선택X3개·전체 여정14개 화면도 확인했다. 첫 검토에서 발견한 desktop 그림/수치,390px 설명/수치,320px 연도 단위 겹침을 한 묶음으로 수정했다.
+- 실제 CDP touch: 세로 swipe scroll3685→3936, yaw.72·선택A·자동 시점 유지. 가로 swipe scroll3685유지, yaw.72→−.2097/manual=true, 선택A 유지.
+- axe desktop/mobile 각각 **45 passes / 0 violations / 1 incomplete**. 자동 판정하지 못한 SVG 한 글자 마커·화살표·그림 근처 상태 문구는 실제 표면과 색으로 확인했다. 자동 검사만으로 전체 접근성을 보증하지 않는다.
+- Taste 소스 **0 FAIL/0 WARN**, 실제1440·768·390 검사 **0 FAIL/3 WARN**. `still-page` 규칙만 사용자 요청의 읽기 정지·반복 등장 제거를 지키기 위해 명시적으로 허용했다. 글자 크기 수는 실제 수치/UI 역할을 유지하고, 실사 사진·별도 영상은 가상 도시 자체3D를 중심 미디어로 쓰므로 추가하지 않았다. covered-text·pinned-over-picture 문제는 실제 배치를 수정해 해소했다.
+
+검증은 브라우저 viewport·실제 WebGL draw·CDP 입력 범위다. 실물 휴대폰의 GPU·배터리·FPS나 의학적인 눈 피로 개선은 측정하지 않았다. 가상 예시와 서비스 개발 상태는 그대로 명시한다.

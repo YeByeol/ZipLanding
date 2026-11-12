@@ -19,3 +19,32 @@ test('saved markers retain building identity after tray reordering', () => {
   assert.match(group, /<text[^>]*>D<\/text>/);
   assert.doesNotMatch(group, /class="building-marker" style="display:none"/);
 });
+
+test('SVG colors and missing hatches update in place from the shared transition', async () => {
+  const { mountCity, colorFrameForTransition } = await import('../scripts/city.mjs');
+  const parts = new Map();
+  const part = selector => {
+    if (!parts.has(selector)) parts.set(selector, { attributes: {}, style: {}, textContent: '', setAttribute(key, value) { this.attributes[key] = value; }, querySelector: part });
+    return parts.get(selector);
+  };
+  const building = BUILDINGS.find(item => item.id === 'x');
+  const node = { dataset: { buildingId: 'x' }, querySelector: part, classList: { toggle() {} } };
+  const svg = { dataset: {}, querySelectorAll: () => [node], remove() {} };
+  let replacements = 0;
+  const container = { set innerHTML(value) { replacements++; }, querySelector: () => svg };
+  const owner = mountCity(container, { buildings: [building] });
+  const weights = { slope: 50, elevation: 50, age: 50 };
+  const blend = { from: 'price', to: 'terrain', mix: .5 };
+  owner.update({ weights, colorBlend: blend });
+  const expected = colorFrameForTransition(building, [building], blend, weights);
+  const roof = part('.building-roof');
+  assert.equal(roof.attributes.fill, expected.color);
+  assert.equal(part('.building-missing').style.opacity, '0.5');
+  assert.equal(part('.building-missing').style.display, '');
+  owner.update({ mode: 'score' });
+  assert.equal(roof.attributes.fill, expected.color, 'logical mode cannot overwrite the physical blend');
+  owner.update({ colorBlend: { from: 'price', to: 'terrain', mix: 0 } });
+  assert.equal(part('.building-missing').style.display, 'none');
+  assert.equal(replacements, 1, 'updates retain the original SVG nodes');
+  assert.equal(part('.building-roof'), roof);
+});

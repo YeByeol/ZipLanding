@@ -22,7 +22,7 @@
 <body>
   <a class="skip-link" href="#main">본문 바로가기</a>
   <header class="site-header">
-    <a class="brand" href="#story-price" aria-label="ZIP 첫 화면"><img src="./assets/logo.svg" width="112" height="40" alt="ZIP"></a>
+    <a class="brand" href="#story-price" aria-label="ZIP 첫 화면"><img src="./assets/logo-light.svg" width="112" height="40" alt="ZIP"></a>
     <nav aria-label="주요 메뉴"><a href="#platform">장소를 읽는 법</a><a href="#experience">내 기준</a><a href="#comparison">선택의 이유</a><a href="#data">근거</a></nav>
     <a class="header-action" href="#experience">내 기준으로 체험하기 <span aria-hidden="true">↗</span></a>
     <div id="reading-progress" class="reading-progress" role="progressbar" aria-label="페이지 읽은 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
@@ -93,7 +93,7 @@
 
     <section class="comparison section-pad" id="comparison" aria-labelledby="comparison-title">
       <div class="section-heading"><h2 id="comparison-title" data-reveal><span data-compare-heading>세 곳의 차이,</span><br><span data-compare-subheading>선택할 이유가 됩니다.</span></h2><div class="section-lead" data-reveal><p>가격과 조건을 나란히 놓으면, 무엇을 얻고 무엇을 감수할지 보입니다.</p></div></div>
-      <div class="compare-toolbar"><p id="saved-count">담은 장소 3 / 3</p><div><button type="button" disabled data-needs-js class="text-button" id="reset-demo">체험 초기화</button><button type="button" disabled data-needs-js class="button button-dark" id="share-state">내 기준 링크 복사 <span aria-hidden="true">↗</span></button></div></div>
+      <div class="compare-toolbar"><p id="saved-count">담은 장소 3 / 3</p><div><button type="button" disabled data-needs-js class="text-button" id="reset-demo">체험 초기화</button><button type="button" disabled data-needs-js class="button button-light" id="share-state">내 기준 링크 복사 <span aria-hidden="true">↗</span></button></div></div>
       <div id="saved-places" class="saved-places" role="group" aria-label="담은 예시 장소" data-ui>
         <section class="saved-place is-selected"><button type="button" disabled data-needs-js data-select="a" aria-pressed="true" aria-label="장소 A, 내 기준 37점. 보증금 1,000만, 월세 35만, 23㎡. 경사 1%, 고도 90m, 1995년. 살펴보기"><span class="place-id">A</span><span class="place-score">37<small>점 / 내 기준</small></span><span class="place-price">보증금 1,000만 · 월세 35만</span><span class="place-facts">23㎡ · 경사 1% · 고도 90m · 1995년</span></button><button type="button" disabled data-needs-js data-remove="a" aria-label="장소 A 비교에서 빼기">빼기 <span aria-hidden="true">×</span></button></section>
         <section class="saved-place"><button type="button" disabled data-needs-js data-select="b" aria-pressed="false" aria-label="장소 B, 내 기준 45점. 보증금 3,000만, 월세 48만, 30㎡. 경사 2%, 고도 83m, 2001년. 살펴보기"><span class="place-id">B</span><span class="place-score">45<small>점 / 내 기준</small></span><span class="place-price">보증금 3,000만 · 월세 48만</span><span class="place-facts">30㎡ · 경사 2% · 고도 83m · 2001년</span></button><button type="button" disabled data-needs-js data-remove="b" aria-label="장소 B 비교에서 빼기">빼기 <span aria-hidden="true">×</span></button></section>
@@ -106,9 +106,9 @@
 
     <section class="data-section section-pad" id="data" aria-labelledby="data-title"><div class="data-heading"><h2 id="data-title" data-reveal>모르는 것은,<br>모른다고.</h2><p data-reveal>숫자마다 출처와 한계를 남기는 것이 ZIP의 방향입니다. 지금은 가상 데이터로 그 방식을 보여드립니다.</p></div><dl class="data-principles"><div data-reveal><dt>신고 계약</dt><dd>현재 매물이나 호가가 아닙니다. 신고된 거래를 기준 기간과 함께 봅니다.</dd></div><div data-reveal><dt>추정한 조건</dt><dd>지형과 경사는 계산한 값입니다. 방법과 한계를 함께 표시합니다.</dd></div><div data-reveal><dt>비슷한 건물 묶음</dt><dd>위치가 가려진 거래를 개별 건물의 확정 가격처럼 보여주지 않습니다.</dd></div><div data-reveal><dt>자료 없음</dt><dd>0이나 나쁜 조건으로 채우지 않습니다. 점수에서 빠진 조건도 알 수 있습니다.</dd></div></dl></section>
     <section class="faq section-pad" aria-label="자주 묻는 질문"><div class="faq-intro"><h2 data-reveal>미리 알아둘 것</h2><p>지금 보여드리는 범위와<br>앞으로 만들 범위를 구분합니다.</p></div><div class="faq-answers"><p data-reveal><strong>지금 실제 서비스를 이용할 수 있나요?</strong> ZIP은 개발 중입니다. 이 페이지에서는 서비스의 방향과 작동 방식을 가상의 도시와 예시 데이터로 체험할 수 있습니다.</p><p data-reveal><strong>가격은 현재 매물 가격인가요?</strong> 제품은 신고 계약을 바탕으로 장소를 비교하는 방향입니다. 현재 매물·호가를 제공하지 않으며, 이 페이지의 금액은 모두 설명용 가상 값입니다.</p><p data-reveal><strong>어디서부터 시작하나요?</strong> 첫 범위는 관악구의 가격·건물·지형입니다. 교통, 생활시설, 인구와 상권, 소음, 침수·날씨·햇빛은 이후 확장할 계획입니다.</p></div></section>
-    <section class="closing section-pad" aria-labelledby="closing-title"><h2 id="closing-title" data-reveal>이제,<br>당신의 기준으로.</h2><div data-reveal><p>중요한 조건을 정하고,<br>장소를 다시 읽어보세요.</p><a class="button button-light" href="#experience">내 기준으로 체험하기 <span aria-hidden="true">↗</span></a></div><img class="closing-wordmark" src="./assets/logo.svg" width="164" height="64" alt="ZIP"></section>
+    <section class="closing section-pad" aria-labelledby="closing-title"><h2 id="closing-title" data-reveal>이제,<br>당신의 기준으로.</h2><div data-reveal><p>중요한 조건을 정하고,<br>장소를 다시 읽어보세요.</p><a class="button button-light" href="#experience">내 기준으로 체험하기 <span aria-hidden="true">↗</span></a></div><img class="closing-wordmark" src="./assets/logo-light.svg" width="164" height="64" alt="ZIP"></section>
   </main>
-  <footer class="site-footer section-pad"><a class="brand" href="#story-price" aria-label="ZIP 첫 화면"><img src="./assets/logo.svg" width="84" height="30" alt="ZIP"></a><p>© 2026 ZIP · 개발 중 · 가상 데이터 체험</p><a href="https://github.com/YeByeol/ZipLanding" target="_blank" rel="noopener noreferrer">GitHub에서 보기 <span aria-hidden="true">↗</span></a></footer>
+  <footer class="site-footer section-pad"><a class="brand" href="#story-price" aria-label="ZIP 첫 화면"><img src="./assets/logo-light.svg" width="84" height="30" alt="ZIP"></a><p>© 2026 ZIP · 개발 중 · 가상 데이터 체험</p><a href="https://github.com/YeByeol/ZipLanding" target="_blank" rel="noopener noreferrer">GitHub에서 보기 <span aria-hidden="true">↗</span></a></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>
 </body>
 </html>

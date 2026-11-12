@@ -1,9 +1,8 @@
 import { BUILDINGS, scoreBuilding, monthlyUnit, comparisonFor } from './demo.mjs';
-import { PALETTES } from './city.mjs';
+import { PALETTES, mixColor } from './city.mjs';
+import { PHASES as phases, MODES as modes, storyTimeline } from './story-timeline.mjs';
 import { presentationForProgress } from './scene-model.mjs';
 
-const phases = ['price', 'conditions', 'criteria', 'value'];
-const modes = { price: 'price', conditions: 'terrain', criteria: 'score', value: 'price' };
 const captions = {
   price: '가격표부터 읽습니다. 청록색이 진할수록 면적당 월 환산 가격이 높습니다.',
   conditions: '가격 뒤의 조건을 읽습니다. 모래색이 진할수록 경사가 큽니다. 빗금은 자료 없음입니다.',
@@ -35,18 +34,22 @@ export function mountStory({ root, element, owner }) {
   const selection = root?.querySelector('#hero-selection');
   const originalRoot = Object.fromEntries(['storyPhase', 'storyEnhanced'].map(key => [key, root?.dataset[key]]));
   const initialMode = element?.dataset.storyMode;
-  const originalPanels = panels.map(panel => ({ panel, hidden: panel.hidden, aria: panel.getAttribute('aria-hidden') }));
+  const originalPanels = panels.map(panel => ({ panel, hidden: panel.hidden, aria: panel.getAttribute('aria-hidden'), opacity: panel.style.opacity }));
   const originalLinks = links.map(link => ({ link, aria: link.getAttribute('aria-current') }));
   const viewport = root?.ownerDocument?.defaultView;
   const lowHeight = viewport?.matchMedia?.('(max-height: 620px)');
   let enhanced = !(lowHeight?.matches ?? viewport?.innerHeight <= 620);
   let phase, state, stateKey, sceneKey, presentationKey, progress = 0, reduced = false, destroyed = false;
+  let timeline = storyTimeline(0);
+  const captionOpacity = caption?.style.opacity;
   if (root) root.dataset.storyEnhanced = String(enhanced);
 
   function updatePresentation() {
-    if (!state || !enhanced) return;
+    if (!state) return;
     const building = BUILDINGS.find(item => item.id === state.selected) ?? BUILDINGS[0];
-    const frame = presentationForProgress(progress, building, { reduced });
+    const colors = enhanced ? timeline : storyTimeline(0);
+    const frame = { ...presentationForProgress(progress, building, { reduced: reduced || !enhanced }),
+      colorBlend: { from: modes[colors.from], to: modes[colors.to], mix: colors.blend } };
     const key = JSON.stringify(frame);
     if (key === presentationKey) return;
     presentationKey = key;
@@ -55,18 +58,30 @@ export function mountStory({ root, element, owner }) {
 
   function showPanels() {
     for (const panel of panels) {
-      panel.hidden = enhanced && panel.dataset.storyPanel !== phase;
-      panel.setAttribute('aria-hidden', String(panel.hidden));
+      const index = phases.indexOf(panel.dataset.storyPanel);
+      const opacity = enhanced ? timeline.opacities[index] ?? 0 : 1;
+      panel.style.opacity = String(opacity);
+      panel.hidden = opacity === 0;
+      panel.setAttribute('aria-hidden', String(enhanced && panel.dataset.storyPanel !== phase));
+    }
+    const colors = enhanced ? timeline : storyTimeline(0);
+    [...(legend?.querySelectorAll('i') ?? [])].forEach((swatch, index) => {
+      swatch.style.backgroundColor = mixColor(PALETTES[modes[colors.from]][index], PALETTES[modes[colors.to]][index], colors.blend);
+    });
+    if (caption) {
+      const visible = timeline.opacities.findIndex(opacity => opacity > 0);
+      const textPhase = enhanced ? phases[visible < 0 ? phases.indexOf(timeline.to) : visible] : 'price';
+      caption.textContent = captions[textPhase];
+      caption.style.opacity = String(enhanced ? Math.max(...timeline.opacities) : 1);
     }
   }
 
   function updateScene() {
     if (!state) return;
-    const mode = modes[phase ?? 'price'];
-    const key = `${mode}:${stateKey}`;
+    const key = stateKey;
     if (key === sceneKey) return;
     sceneKey = key;
-    owner?.update({ ...state, weights: { ...state.weights }, saved: [...state.saved], mode });
+    owner?.update({ ...state, weights: { ...state.weights }, saved: [...state.saved], mode: 'price' });
   }
 
   function showPhase(next) {
@@ -74,15 +89,11 @@ export function mountStory({ root, element, owner }) {
     phase = next;
     if (root) root.dataset.storyPhase = phase;
     if (element) element.dataset.storyMode = modes[phase];
-    showPanels();
     for (const link of links) {
       const target = link.dataset.storyLink || link.getAttribute('href')?.replace('#story-', '');
       if (target === phase) link.setAttribute('aria-current', 'step');
       else link.removeAttribute('aria-current');
     }
-    if (caption) caption.textContent = captions[phase];
-    [...(legend?.querySelectorAll('i') ?? [])].forEach((swatch, index) => { swatch.style.backgroundColor = PALETTES[modes[phase]][index]; });
-    updateScene();
   }
 
   function renderFields() {
@@ -112,28 +123,33 @@ export function mountStory({ root, element, owner }) {
       state = { selected: next.selected, weights: { ...next.weights }, saved: [...(next.saved ?? [])] };
       renderFields();
       showPhase(phase ?? 'price');
+      showPanels();
       updateScene();
       updatePresentation();
     },
     updateScroll({ reduced: preference = false } = {}) {
       if (destroyed) return;
+      const preferenceChanged = reduced !== preference;
       reduced = preference;
       const nextEnhanced = !(lowHeight?.matches ?? viewport?.innerHeight <= 620);
-      if (enhanced !== nextEnhanced) {
+      if (enhanced !== nextEnhanced || preferenceChanged) {
         enhanced = nextEnhanced;
+        presentationKey = undefined;
         if (root) root.dataset.storyEnhanced = String(enhanced);
-        showPanels();
       }
       const result = storyPhaseForSteps(steps.map(step => step.getBoundingClientRect()), viewport?.innerHeight);
       progress = result.progress;
-      showPhase(result.phase);
+      timeline = storyTimeline(progress, phase, { reduced });
+      showPhase(timeline.phase);
+      showPanels();
       updatePresentation();
     },
     destroy() {
       destroyed = true;
       if (root) for (const [key, value] of Object.entries(originalRoot)) { if (value === undefined) delete root.dataset[key]; else root.dataset[key] = value; }
       if (element) { if (initialMode === undefined) delete element.dataset.storyMode; else element.dataset.storyMode = initialMode; }
-      for (const { panel, hidden, aria } of originalPanels) { panel.hidden = hidden; if (aria === null) panel.removeAttribute('aria-hidden'); else panel.setAttribute('aria-hidden', aria); }
+      if (caption) caption.style.opacity = captionOpacity ?? '';
+      for (const { panel, hidden, aria, opacity } of originalPanels) { panel.hidden = hidden; panel.style.opacity = opacity ?? ''; if (aria === null) panel.removeAttribute('aria-hidden'); else panel.setAttribute('aria-hidden', aria); }
       for (const { link, aria } of originalLinks) { if (aria === null) link.removeAttribute('aria-current'); else link.setAttribute('aria-current', aria); }
     },
   };

@@ -35,6 +35,20 @@ export function colorFor(building, buildings, mode, weights) {
   return PALETTES.price[Math.min(4, Math.floor(position / sorted.length * 5))];
 }
 
+export function mixColor(from, to, mix = 0) {
+  const amount = Number.isFinite(mix) ? Math.max(0, Math.min(1, mix)) : 0;
+  const rgb = color => color.slice(1).match(/../g).map(part => parseInt(part, 16));
+  const a = rgb(from), b = rgb(to);
+  return '#' + a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, '0')).join('');
+}
+
+export function colorFrameForTransition(building, buildings, { from = 'price', to = from, mix = 0 } = {}, weights) {
+  const amount = Number.isFinite(mix) ? Math.max(0, Math.min(1, mix)) : 0;
+  const a = colorFor(building, buildings, from, weights), b = colorFor(building, buildings, to, weights);
+  const missingA = +(a === '#d9d6cf'), missingB = +(b === '#d9d6cf');
+  return { color: mixColor(a, b, amount), missing: missingA + (missingB - missingA) * amount };
+}
+
 function tree(x, y, size = 1) {
   const [cx, cy] = point(x, y);
   return `<g><ellipse cx="${cx}" cy="${cy + 1}" rx="${10 * size}" ry="${5 * size}" fill="#c2d8c8"/>${line([cx, cy], [cx, cy - 15 * size], 'stroke="#64816d" stroke-width="2"')}<path d="M${cx},${cy - 38 * size} C${cx - 17 * size},${cy - 28 * size} ${cx - 15 * size},${cy - 11 * size} ${cx},${cy - 10 * size} C${cx + 16 * size},${cy - 9 * size} ${cx + 17 * size},${cy - 28 * size} ${cx},${cy - 38 * size}Z" fill="#89ae93"/><path d="M${cx},${cy - 33 * size}L${cx},${cy - 13 * size}" stroke="#b6cfb6" stroke-width="1"/></g>`;
@@ -148,7 +162,7 @@ export function mountCity(container, { buildings = BUILDINGS, onSelect, interact
       state = { ...state, ...next };
       svg.dataset.cityMode = state.mode;
       for (const { node, building } of nodes) {
-        const color = colorFor(building, buildings, state.mode, state.weights);
+        const { color, missing } = colorFrameForTransition(building, buildings, state.colorBlend ?? { from: state.mode }, state.weights);
         node.querySelector('.building-roof').setAttribute('fill', color);
         node.querySelector('.building-roof').setAttribute('stroke', shade(color, .76));
         node.querySelector('.building-front').setAttribute('fill', shade(color, .87));
@@ -156,7 +170,9 @@ export function mountCity(container, { buildings = BUILDINGS, onSelect, interact
         node.querySelector('.building-core-roof').setAttribute('fill', shade(color, 1.08));
         node.querySelector('.building-core-roof').setAttribute('stroke', shade(color, .78));
         node.querySelector('.building-core-side').setAttribute('fill', shade(color, .64));
-        node.querySelector('.building-missing').style.display = color === '#d9d6cf' ? '' : 'none';
+        const hatch = node.querySelector('.building-missing');
+        hatch.style.display = missing > 0 ? '' : 'none';
+        hatch.style.opacity = String(missing);
         const selected = building.id === state.selected;
         const index = state.saved.indexOf(building.id);
         node.classList.toggle('is-selected', selected);

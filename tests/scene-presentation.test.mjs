@@ -38,3 +38,24 @@ test('presentation belongs only to the noninteractive owner and respects its man
     for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; }
   }
 });
+
+test('story frames publish exact camera coordinates before GPU initialization without a tracking loop', () => {
+  const saved = Object.fromEntries(['window', 'document', 'IntersectionObserver'].map(key => [key, globalThis[key]]));
+  globalThis.IntersectionObserver = class { observe() {} disconnect() {} };
+  globalThis.window = { IntersectionObserver: globalThis.IntersectionObserver, matchMedia: () => ({ matches: false, addEventListener() {}, removeEventListener() {} }) };
+  globalThis.document = { createElement: element, addEventListener() {}, removeEventListener() {} };
+  const svg = element(), container = { ...element(), querySelector: () => svg };
+  let owner;
+  try {
+    owner = mountScene3D(container);
+    owner.setPresentation({ yaw: .62, pitch: .80, zoom: 3.2, target: { x: -3, y: .5, z: -2 }, colorBlend: { from: 'price', to: 'terrain', mix: .5 } });
+    assert.equal(container.dataset.viewZoom, '3.2');
+    assert.equal(container.dataset.viewYaw, '0.6200');
+    assert.equal(container.dataset.targetX, '-3.0000');
+    owner.setPresentation({ yaw: .56, pitch: .92, zoom: 1.05, target: { x: 0, y: .28, z: 0 }, colorBlend: { from: 'price', to: 'price', mix: 0 } });
+    assert.equal(container.dataset.viewZoom, '1.05', 'fast seeks apply the requested frame directly');
+  } finally {
+    owner?.destroy();
+    for (const [key, value] of Object.entries(saved)) { if (value === undefined) delete globalThis[key]; else globalThis[key] = value; }
+  }
+});

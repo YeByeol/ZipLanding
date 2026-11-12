@@ -103,11 +103,11 @@ test('motion batches events, stays idle, honors reduced motion and cleans up', a
     assert.deepEqual(calls, [0, 0.5]);
     assert.equal(progress.style.transform, 'scaleX(0.5)');
     assert.equal(attributes.get('aria-valuenow'), '50');
-    revealCallback([{ isIntersecting: true, target }]);
+    assert.equal(revealCallback, undefined, 'generic section reveals are removed');
     preference.matches = true;
     preference.dispatchEvent(new Event('change'));
-    assert.equal(cancellations, 1, 'changing preference cancels an active entrance');
-    assert.equal(disconnected, true);
+    assert.equal(cancellations, 0, 'reading the page never creates an entrance animation');
+    assert.equal(disconnected, false);
     top = -400;
     flush();
     assert.equal(calls.length, 2, 'reduced motion does not move scene cameras');

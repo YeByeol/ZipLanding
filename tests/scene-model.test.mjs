@@ -58,21 +58,21 @@ test('named views fit the city or focus the requested building without mutating 
 });
 
 
-test('cinematic camera goes wide, selected macro, wide score and overhead price continuously', () => {
+test('story camera holds readable wide, selected, criteria and value poses', () => {
   assert.equal(typeof model.presentationForProgress, 'function');
   const building = Object.freeze({ x: 0, y: 0, height: 18 });
   const frames = [0, .3, .62, 1].map(progress => model.presentationForProgress(progress, building));
   assert.deepEqual(frames[0], { yaw: .72, pitch: .68, zoom: 1, target: { x: 0, y: .28, z: 0 } });
-  assert.equal(frames[1].zoom, 4.2);
-  assert.equal(frames[1].yaw, .5);
-  assert.equal(frames[1].pitch, .86);
+  assert.equal(frames[1].zoom, 3.2);
+  assert.equal(frames[1].yaw, .62);
+  assert.equal(frames[1].pitch, .80);
   assert.ok(Math.abs(frames[1].target.x + 2.975) < 1e-12);
   assert.ok(Math.abs(frames[1].target.z + 1.915) < 1e-12);
   assert.equal(frames[1].target.y, 18 / 78 + .14);
-  assert.deepEqual(frames[2], { yaw: .95, pitch: .8, zoom: 1.05, target: { x: 0, y: .28, z: 0 } });
-  assert.deepEqual(frames[3], { yaw: .12, pitch: 1.08, zoom: 1.1, target: { x: 0, y: .28, z: 0 } });
-  const middle = model.presentationForProgress(.15, building);
-  assert.ok(Math.abs(middle.zoom - 2.6) < 1e-12);
+  assert.deepEqual(frames[2], { yaw: .72, pitch: .76, zoom: 1.05, target: { x: 0, y: .28, z: 0 } });
+  assert.deepEqual(frames[3], { yaw: .56, pitch: .92, zoom: 1.05, target: { x: 0, y: .28, z: 0 } });
+  const middle = model.presentationForProgress(1/6, building);
+  assert.ok(Math.abs(middle.zoom - 2.1) < 1e-12);
   assert.ok(Math.abs(middle.target.x + 1.4875) < 1e-12);
   for (const boundary of [.3, .62]) {
     const before = model.presentationForProgress(boundary - .000001, building);
@@ -92,7 +92,7 @@ test('cinematic camera rejects invalid progress and data and reduced motion stay
     const frame = model.presentationForProgress(.3, building);
     assert.ok([frame.yaw, frame.pitch, frame.zoom, ...Object.values(frame.target)].every(Number.isFinite));
   }
-  assert.equal(model.presentationForProgress(10).pitch, 1.08);
+  assert.equal(model.presentationForProgress(10).pitch, .92);
 });
 
 test('presentation trust boundary bounds cinematic zoom and city target without changing interactive zoom', () => {

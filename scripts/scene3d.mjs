@@ -1,5 +1,5 @@
 import { BUILDINGS } from './demo.mjs';
-import { colorFor, mountCity } from './city.mjs';
+import { PALETTES, colorFrameForTransition, mountCity } from './city.mjs';
 import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset, clampPresentation, presentationForProgress } from './scene-model.mjs';
 
 let threePromise;
@@ -54,9 +54,13 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     requestRender();
   }
 
+  const colorFrame = building => colorFrameForTransition(building, buildings, state.colorBlend ?? { from: state.mode }, state.weights);
+  const storyOwned = () => preset === 'story' && !interactive && !manual;
+
   function fallbackMode() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
+    fallback.update(state);
     svg.style.visibility = '';
     if (canvas) canvas.style.visibility = 'hidden';
     tooltip.hidden = true;
@@ -79,7 +83,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   function render(time) {
     frame = 0;
     if (destroyed || lost || !visible || document.hidden) return;
-    const amount = reduced ? 1 : Math.min(32, time - (previousTime || time - 16)) / 105;
+    const amount = reduced || storyOwned() ? 1 : Math.min(32, time - (previousTime || time - 16)) / 105;
     previousTime = time;
     let unsettled = false;
     for (const key of ['yaw', 'pitch']) {
@@ -101,7 +105,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (Math.abs(targetY - item.group.position.y) > .0005) unsettled = true;
       else item.group.position.y = targetY;
       const colorDifference = Math.max(Math.abs(item.material.color.r - item.targetColor.r), Math.abs(item.material.color.g - item.targetColor.g), Math.abs(item.material.color.b - item.targetColor.b));
-      if (colorDifference > .001) {
+      if (colorDifference > .001 && amount < 1) {
         item.material.color.lerp(item.targetColor, amount);
         unsettled = true;
       } else item.material.color.copy(item.targetColor);
@@ -261,7 +265,6 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     };
     const windowGeometry = own(new THREE.PlaneGeometry(.055, .09));
     const windowMaterial = material('#ffffff', { roughness: .45, metalness: .12 });
-    const hatchMaterial = own(new THREE.LineBasicMaterial({ color: '#5b6b61', transparent: true, opacity: .8 }));
     const windowTransform = new THREE.Object3D();
     const windowColor = new THREE.Color();
     for (const [index, building] of buildings.entries()) {
@@ -271,7 +274,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       world.add(group);
       const h = building.height / 39, w = building.w * .93, d = building.d * .93;
       box(group, 0, .028, 0, w + .16, .055, d + .16, pavement, true, true);
-      const facade = material(colorFor(building, buildings, state.mode, state.weights));
+      const initialColor = colorFrame(building);
+      const facade = material(initialColor.color);
       const body = box(group, 0, h / 2 + .06, 0, w, h, d, facade, true, true);
       body.userData.buildingId = building.id;
       box(group, 0, .105, 0, w + .025, .085, d + .025, trim, true, true);
@@ -291,8 +295,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       }
       const hatchGeometry = own(new THREE.BufferGeometry());
       hatchGeometry.setAttribute('position', new THREE.Float32BufferAttribute(hatchPoints, 3));
-      const missingMark = new THREE.LineSegments(hatchGeometry, hatchMaterial);
-      missingMark.visible = colorFor(building, buildings, state.mode, state.weights) === '#d9d6cf';
+      const missingMark = new THREE.LineSegments(hatchGeometry, own(new THREE.LineBasicMaterial({ color: '#5b6b61', transparent: true, opacity: initialColor.missing * .8 })));
+      missingMark.visible = initialColor.missing > 0;
       group.add(missingMark);
       const floors = Math.max(2, Math.floor(h / .19));
       const windows = new THREE.InstancedMesh(windowGeometry, windowMaterial, floors * 12);
@@ -324,7 +328,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       const selectedMarker = labelTexture(letter, '#174f43', '#ffffff');
       const marker = new THREE.Sprite(defaultMarker); marker.position.set(0, h + .38, 0); marker.scale.set(.32, .32, 1); marker.renderOrder = 3; group.add(marker);
       marker.userData.buildingId = building.id;
-      objects.push({ id: building.id, group, body, material: facade, targetColor: new THREE.Color(colorFor(building, buildings, state.mode, state.weights)), outline, missingMark, marker, defaultMarker, savedMarker, selectedMarker });
+      objects.push({ id: building.id, group, body, material: facade, targetColor: new THREE.Color(initialColor.color), outline, missingMark, marker, defaultMarker, savedMarker, selectedMarker });
     }
   }
 
@@ -403,27 +407,49 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     entryObserver.observe(container);
   } else initialize();
 
+  function updateColors() {
+    for (const item of objects) {
+      const { color, missing } = colorFrame(buildings.find(building => building.id === item.id));
+      item.targetColor.set(color);
+      item.missingMark.visible = missing > 0;
+      item.missingMark.material.opacity = missing * .8;
+    }
+  }
+
+  function paintStoryFrame() {
+    if (storyOwned() && renderer && !destroyed && !lost && visible && !document.hidden) {
+      if (frame) cancelAnimationFrame(frame);
+      frame = 0;
+      render(0);
+    } else requestRender();
+  }
+
   return {
     update(next = {}) {
       state = { ...state, ...next };
       clearHover();
-      fallback.update(state);
-      for (const item of objects) {
-        const color = colorFor(buildings.find(building => building.id === item.id), buildings, state.mode, state.weights);
-        item.targetColor.set(color);
-        item.missingMark.visible = color === '#d9d6cf';
-      }
-      requestRender();
+      if (container.dataset.renderer !== 'webgl') fallback.update(state);
+      updateColors();
+      if (storyOwned()) paintStoryFrame();
+      else requestRender();
     },
     setPresentation(frame) {
       if (destroyed || interactive || manual) return;
       const next = reduced ? presentationForProgress(0) : clampPresentation(frame);
+      if (frame?.colorBlend) {
+        const { from, to, mix } = frame.colorBlend;
+        if (Object.hasOwn(PALETTES, from) && Object.hasOwn(PALETTES, to)) {
+          state.colorBlend = { from, to, mix: clampProgress(mix) };
+        }
+      }
       targetView = { yaw: next.yaw, pitch: next.pitch };
       targetCenter = { ...next.target };
       targetZoom = next.zoom;
       preset = 'story';
-      if (reduced) { view = { ...targetView }; target = { ...targetCenter }; zoom = targetZoom; }
-      publishView(); requestRender();
+      view = { ...targetView }; target = { ...targetCenter }; zoom = targetZoom;
+      if (container.dataset.renderer !== 'webgl') fallback.update(state);
+      updateColors();
+      publishView(); paintStoryFrame();
     },
     setProgress(value) {
       progress = clampProgress(value);
