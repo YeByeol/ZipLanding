@@ -67,6 +67,6 @@
 
 - [x] 독립 검토자가 승인 설계·구현·테스트를 함께 보고 중요한 동작/보안/제품 주장 문제를 지적한다. 필요한 수정을 검증한다.
 - [x] 소스 트리를 확인해 키·원자료·로컬 QA·이웃 저장소 파일이 포함되지 않았는지 확인한다.
-- [ ] `YeByeol/ZipLanding` 공개 저장소를 만들고 GitHub Pages Actions로 정적 페이지를 배포한다.
-- [ ] Actions 성공과 실제 `https://yebyeol.github.io/ZipLanding/`의 asset·상호작용·모바일을 확인한다.
-- [ ] 공개 URL, 구현 내용, 검증 범위와 남은 제한을 간단히 전달한다.
+- [x] `YeByeol/ZipLanding` 공개 저장소를 만들고 GitHub Pages Actions로 정적 페이지를 배포한다.
+- [x] Actions 성공과 실제 `https://yebyeol.github.io/ZipLanding/`의 asset·상호작용·모바일을 확인한다.
+- [x] 공개 URL, 구현 내용, 검증 범위와 남은 제한을 간단히 전달한다.

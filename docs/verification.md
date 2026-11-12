@@ -50,4 +50,11 @@ ROUND 3: 3개 화면 크기에서 제목·본문·모형·표·FAQ·마무리를
 
 ## 배포
 
-아래 공개 배포 결과는 실제 GitHub Actions와 Pages 응답을 확인한 뒤 기록한다.
+- 공개 주소: https://yebyeol.github.io/ZipLanding/
+- 저장소: https://github.com/YeByeol/ZipLanding (public, 기본 브랜치 main)
+- 배포 소스: `18a95dbccd966307e2493f8de3871202be973ba9`
+- GitHub Actions: https://github.com/YeByeol/ZipLanding/actions/runs/43143328843 — completed / success.
+- Pages API: workflow 배포, HTTPS enforced.
+- 공개 브라우저 6항목 통과: `/ZipLanding/` 경로, 지도 3개 초기화, 표시 이미지 자산 모두 HTTP 200, 로컬 글꼴, 슬라이더→비교표 갱신, 지형 전환.
+- 공개 390px 화면: 가로 overflow 없음. 새 페이지 스크립트 오류 없음. Open Graph PNG HTTP 200.
+- 지연 로딩 이미지는 화면 밖에서 `naturalWidth=0`일 수 있으므로 전체 이미지 로드 검사는 각 자산 URL의 HTTP 200과 화면 내 그림으로 확인했다.
