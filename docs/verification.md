@@ -104,3 +104,10 @@ ROUND 3: 3개 화면 크기에서 제목·본문·모형·표·FAQ·마무리를
 최종 통합 검사 **18/18**: WebGL 첫 프레임·native 이름표 hover/click·세 시점·선택 위치·수동 유지·선택 변경·초기화·native 드래그·지연 초기화·주제 공유·실제 키보드 슬라이더·결측·context loss/restore·overflow·reduced motion을 통과했다. 카메라는 짧은 보간의 허용 오차 안에서 검사했다. 자동화에서 프로그램으로 섹션 이동할 때만 smooth scroll의 비동기 경합을 피하도록 scroll-behavior를 auto로 설정했으며, 별도 native touch 검사는 실제 스크롤 동작을 확인했다.
 
 최종 axe **48 passes / 0 violations / 1 incomplete**. 범례·담은 장소의 이름이 허용된 group 역할에 연결되도록 수정했다. 남은 incomplete는 회전 기호 등 비문자 콘텐츠의 대비 자동 판정이며 실제 조작·기호를 화면에서 확인했다. 자동 검사가 모든 접근성을 보증하지 않는다.
+
+v1.2 공개 배포 확인:
+
+- 코드 `78fcc5dec2033eb36e3adaeec8ed7eb281902435`.
+- Actions https://github.com/YeByeol/ZipLanding/actions/runs/43151499806 — completed / success.
+- https://yebyeol.github.io/ZipLanding/ 공개 브라우저 **6/6**: 첫 WebGL 프레임, 내려다보기, 선택 건물 확대, 스크롤 중 수동 시점, 모바일 overflow 없음, 새 시점 조작 9개 확인.
+- 공개 HTML·CSS·main·scene3d·scene-model **5개 모두 HTTP 200이며 로컬 배포 소스와 바이트 일치**.
