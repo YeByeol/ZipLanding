@@ -111,3 +111,33 @@ v1.2 공개 배포 확인:
 - Actions https://github.com/YeByeol/ZipLanding/actions/runs/43151499806 — completed / success.
 - https://yebyeol.github.io/ZipLanding/ 공개 브라우저 **6/6**: 첫 WebGL 프레임, 내려다보기, 선택 건물 확대, 스크롤 중 수동 시점, 모바일 overflow 없음, 새 시점 조작 9개 확인.
 - 공개 HTML·CSS·main·scene3d·scene-model **5개 모두 HTTP 200이며 로컬 배포 소스와 바이트 일치**.
+
+## v2.0 Apple 레퍼런스 기반 전면 재설계
+
+사용자가 https://www.apple.com/kr/macbook-pro/proled-xdr-display/ 를 제공하며 첫 화면부터 기존 구성을 모두 바꾸라고 명확히 했다. 실제 데스크톱·모바일을 열어 전폭 제품 무대, 큰 문구와 대상의 크기 변화, 세부 정보와 시점 연결을 확인했다. Apple의 이미지·코드·문구는 사용하지 않았다. 직전 좌우 설명형 초안은 배포하지 않고 feature branch의 중간 commit으로 보관했다.
+
+구현 결과:
+
+- 첫 화면은 짙은 청록의 전폭 무대와 ‘당신의 기준으로. 도시를 새롭게.’, 큰 입체 도시로 교체했다. 전체 구성과 문구·체험·비교·근거·큰 ZIP 마무리를 새로 만들었다.
+- 자연스러운 약400svh 구간에서 한 도시가 전체→선택 장소 확대→전체 재색칠→가격 비교의 시점으로 이어진다. 문구·범례·숫자·건물색이 같은 phase를 가리킨다. 스크롤을 잠그거나 휠을 가로채지 않는다.
+- 소개 전용 camera API는 직접 조작하는 체험 camera를 덮지 않는다. 일반 조작의 zoom 상한1.6은 유지하며 소개만4.8까지 허용한다. 모든 동작은 기존 요청 시 렌더와 짧은 보간을 사용한다.
+- 실제 WebGL 확대 keyframe: zoom4.19868, yaw.5000, pitch.8600, targetX−2.9738/Z−1.9142에서 장소 A가 크게 보였다. 초기 wide는 zoom1/yaw.72/pitch.68이다. 위로 돌아가도 같은 장과 시점으로 복원된다.
+- 체험은 넓은 도시 아래 세 슬라이더로 교체했다. 선택·가중치·가격·비교·공유는 같은 state를 유지한다. 저장 수0/1/2/3에 비교 제목이 맞춰지고, 마지막 제거 뒤 빈 상태의 보이는 복귀 링크에 focus가 남는다.
+- 모든 phase는 같은 canvas를 유지한다. 소개 스크롤은 제품 mode/weights/selected/saved/URL을 바꾸지 않는다. 직접 slider 입력은 score로 전환하되 selected ID를 유지한다.
+
+검증:
+
+- Node **32/32**, syntax 검사·SVG 내보내기·diff 공백 검사 통과. 새 camera 보간·NaN/bounds·interactive guard·처음 progress0·역방향·reduced wide·저높이·현재 선택 retarget·20개 peer 제한은 RED→GREEN을 확인했다.
+- 실제 브라우저 통합 **21/21**: 첫 구성·기본score·전진/역방향7장면·state/URL불변·canvas동일·키보드slider·공유계산·결측단위·동일ID·빈상태focus·share대안·reset·reduced정보/정지camera·overflow를 확인했다.
+- 실제 phase link 클릭으로 조건→내 기준→가격 비교의 연속 camera/색 전환을 녹화했다. 이는 QA 기록이며 외부 영상 자산이 아니다.
+- 1440·768·390 실제 렌더 검사 **FAIL0**, 일반 페이지 console error 없음. 제목 두 줄 이하·문서 가로 overflow 없음. 소스 lint **FAIL0/WARN0**. 글자 크기 수·외부 사진/별도 영상 부재 경고는 제품 자체 3D/실제 UI를 중심 미디어로 쓰는 이유로 유지한다.
+- 투명 canvas 사각 영역과 큰 수치가 겹친다고 감지하는 pinned-over-picture 경고는 실제 pixel에서 확인했다. 읽는 문구가 밝은 도시와 겹친 곳은 camera 그림 영역을 조정했다. 첫 제목/설명, 확대 조건, 기준/가격 설명에 검은 공간을 확보했다. phase 링크에는 같은 짙은 무대를 깔아 모형 바닥색과 무관하게 읽힌다.
+- 독립 검토의 중요2건(621–700px 높이의 읽기/중복 HUD 겹침, 일반 흐름 fallback에서 작동하지 않는 장 링크)을 수정하고 재검토를 통과했다. 낮은 화면은 네 장을 모두 노출하므로 불필요한 장 링크를 숨긴다.
+- 최종 모바일 조건 문구와 도시의 실제 경계:390×844 문구bottom252.63/citytop283.39,375×667 240.67/248.72,320×640 226.58/242.23. 세 크기 모두 overflow0이다.
+- 장소X의 세 결측값은 320px의 세 equal column에 들어가며 ‘자료 없음’의 가짜 단위가 없다. 연식 중요도0의 비교대상20개도 무대에는 개수만 표시하고, preview는3개+나머지 수로 제한한다. 전체 비교 설명은 문서 흐름의 details에서 읽힌다.
+- 실제 CDP touch: 세로 swipe는 scroll3685→3943, camera/manual/선택 유지. 가로 swipe는 문서scroll유지, yaw.72→−.2097/manual=true, 선택A 유지.
+- JS 차단: 네 장, SVG, 정적 A/B/C 요약과 보라 범례가 남고 조작은 비활성. vendor 차단: SVG와 HTML 장소 선택·요약이 작동한다. 844×390 저높이에서는 일반 흐름으로 네 장이 읽힌다.
+- 최종 axe **45 passes / 0 violations / 1 incomplete**. 영구 페이지 H1, 비교 텍스트/제거버튼과 선택 배경의 대비, save 버튼 hover를 보완했다. 남은 incomplete는 비문자 화살표의 자동 대비 판정이다. 실제 조작과 색을 확인했으며 자동 검사만으로 전체 접근성을 보증하지 않는다.
+- Impeccable detector의 실제 hover 대비 문제는 어두운 버튼 패턴으로 수정했다. 점수용 보라 의미는 확정 브랜드로 유지하며, 표/section의 padding 경고는 실제 부모 gutter·셀 padding과 화면으로 판단했다. 새 초기화·두 번째 테마를 추가하지 않았다.
+
+브라우저 viewport·CDP 검증이며 실제 휴대폰 GPU·배터리·FPS는 측정하지 않았다. 모든 장소·금액·점수는 가상 예시이고 실제 서비스·실거래 지도 배포가 아니다.

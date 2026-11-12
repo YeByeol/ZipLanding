@@ -56,3 +56,52 @@ test('named views fit the city or focus the requested building without mutating 
   assert.equal(model.cameraPreset('unknown'), null);
   assert.equal(model.cameraPreset('focus'), null);
 });
+
+
+test('cinematic camera goes wide, selected macro, wide score and overhead price continuously', () => {
+  assert.equal(typeof model.presentationForProgress, 'function');
+  const building = Object.freeze({ x: 0, y: 0, height: 18 });
+  const frames = [0, .3, .62, 1].map(progress => model.presentationForProgress(progress, building));
+  assert.deepEqual(frames[0], { yaw: .72, pitch: .68, zoom: 1, target: { x: 0, y: .28, z: 0 } });
+  assert.equal(frames[1].zoom, 4.2);
+  assert.equal(frames[1].yaw, .5);
+  assert.equal(frames[1].pitch, .86);
+  assert.ok(Math.abs(frames[1].target.x + 2.975) < 1e-12);
+  assert.ok(Math.abs(frames[1].target.z + 1.915) < 1e-12);
+  assert.equal(frames[1].target.y, 18 / 78 + .14);
+  assert.deepEqual(frames[2], { yaw: .95, pitch: .8, zoom: 1.05, target: { x: 0, y: .28, z: 0 } });
+  assert.deepEqual(frames[3], { yaw: .12, pitch: 1.08, zoom: 1.1, target: { x: 0, y: .28, z: 0 } });
+  const middle = model.presentationForProgress(.15, building);
+  assert.ok(Math.abs(middle.zoom - 2.6) < 1e-12);
+  assert.ok(Math.abs(middle.target.x + 1.4875) < 1e-12);
+  for (const boundary of [.3, .62]) {
+    const before = model.presentationForProgress(boundary - .000001, building);
+    const after = model.presentationForProgress(boundary + .000001, building);
+    assert.ok(Math.abs(before.zoom - after.zoom) < .0001);
+  }
+  assert.deepEqual(model.presentationForProgress(.3, building), frames[1], 'reverse scroll returns the same selected target');
+  assert.deepEqual(building, { x: 0, y: 0, height: 18 });
+});
+
+test('cinematic camera rejects invalid progress and data and reduced motion stays wide', () => {
+  assert.equal(typeof model.presentationForProgress, 'function');
+  const wide = { yaw: .72, pitch: .68, zoom: 1, target: { x: 0, y: .28, z: 0 } };
+  for (const progress of [-1, NaN, Infinity, undefined]) assert.deepEqual(model.presentationForProgress(progress), wide);
+  for (const progress of [0, .3, .7, 1]) assert.deepEqual(model.presentationForProgress(progress, { x: 5, y: 3, height: 64 }, { reduced: true }), wide);
+  for (const building of [undefined, null, {}, { x: NaN, y: Infinity, height: -10 }]) {
+    const frame = model.presentationForProgress(.3, building);
+    assert.ok([frame.yaw, frame.pitch, frame.zoom, ...Object.values(frame.target)].every(Number.isFinite));
+  }
+  assert.equal(model.presentationForProgress(10).pitch, 1.08);
+});
+
+test('presentation trust boundary bounds cinematic zoom and city target without changing interactive zoom', () => {
+  assert.equal(typeof model.clampPresentation, 'function');
+  const input = Object.freeze({ yaw: NaN, pitch: 8, zoom: 100, target: Object.freeze({ x: 999, y: -8, z: -999 }) });
+  assert.deepEqual(model.clampPresentation(input), { yaw: .72, pitch: 1.12, zoom: 4.8, target: { x: 4.4, y: 0, z: -3.25 } });
+  const invalid = model.clampPresentation({ zoom: NaN, target: { x: Infinity, y: NaN } });
+  assert.deepEqual(invalid.target, { x: 0, y: .28, z: 0 });
+  assert.equal(invalid.zoom, 1);
+  assert.equal(model.clampPresentation({ zoom: .1 }).zoom, .7);
+  assert.equal(model.clampZoom(4.2), 1.6);
+});

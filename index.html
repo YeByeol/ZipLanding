@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <meta name="theme-color" content="#f6f7f4">
+  <meta name="theme-color" content="#061d19">
   <title>ZIP — 도시를 보는 나만의 기준</title>
   <meta name="description" content="장소의 조건을 내 중요도로 비교하고, 그 조건에 비춰 가격을 읽는 지도 플랫폼. ZIP의 새로운 장소 읽기를 예시로 체험하세요.">
   <meta property="og:title" content="ZIP — 도시를 보는 나만의 기준">
@@ -28,60 +28,62 @@
     <div id="reading-progress" class="reading-progress" role="progressbar" aria-label="페이지 읽은 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
   </header>
   <main id="main">
-    <section id="platform" class="story" data-story-phase="price" aria-label="가격표 뒤의 장소 읽기">
-      <section class="story-step story-hero" id="story-price" data-story-step="price" aria-labelledby="hero-title">
-        <div class="story-copy">
-          <h1 id="hero-title" data-reveal><span>이곳, 이 가격이면</span><span>내게 괜찮을까?</span></h1>
-          <p class="hero-description" data-reveal>장소의 조건을 내 중요도로 모으고, 비슷한 조건의 장소와 가격을 비교하는 지도 플랫폼.</p>
-          <a class="button button-dark" href="#experience" data-reveal>내 기준으로 체험하기 <span aria-hidden="true">↗</span></a>
-          <div class="hero-place" data-reveal><span data-story-field="place">장소 A</span><p>보증금 <strong><span data-story-field="deposit">1,000</span>만</strong><span> / </span>월세 <strong><span data-story-field="rent">35</span>만</strong></p><span>설명용 가상 장소 · 실제 매물이 아닙니다</span></div>
+    <h1 class="sr-only">ZIP — 당신의 기준으로, 도시를 새롭게.</h1>
+    <section id="platform" class="story" data-story-phase="price" aria-label="한 도시를 읽는 네 가지 장면">
+      <div id="story-price" class="story-waypoint" data-story-step="price" aria-hidden="true"></div>
+      <div id="story-conditions" class="story-waypoint" data-story-step="conditions" aria-hidden="true"></div>
+      <div id="story-criteria" class="story-waypoint" data-story-step="criteria" aria-hidden="true"></div>
+      <div id="story-value" class="story-waypoint" data-story-step="value" aria-hidden="true"></div>
+      <div class="story-stage" id="story-stage">
+        <div id="story-city" class="city-render story-city"><img class="city-poster" src="./assets/city-price.svg" alt="가격과 조건을 같은 장소에 겹쳐 읽는 가상의 입체 도시" width="1000" height="760" fetchpriority="high"></div>
+        <div class="story-panels">
+          <section class="story-panel" data-story-panel="price" aria-labelledby="hero-title">
+            <div class="story-copy"><h2 id="hero-title"><span>당신의 기준으로.</span><span>도시를 새롭게.</span></h2><p>장소의 조건과 가격을 함께 읽는 지도 플랫폼.</p></div>
+            <div class="story-readout hero-readout"><p><span data-story-field="place">장소 A</span>의 가상 예시</p><strong class="story-amount"><span data-story-field="rent">35</span><small>만 원 / 월</small></strong><p>보증금 <span data-story-field="deposit">1,000</span>만 · <span data-story-field="area">23</span>㎡</p></div>
+          </section>
+          <section class="story-panel" data-story-panel="conditions" aria-labelledby="conditions-title">
+            <div class="story-copy"><h2 id="conditions-title">가격표 뒤의<br>조건까지.</h2><p>같은 <span data-story-field="place">장소 A</span>의 경사, 고도, 연식.<br>가격표에 없던 조건을 가까이 봅니다.</p></div>
+            <div class="story-readout"><dl class="condition-readout"><div><dt>경사</dt><dd><span data-story-field="slope">1</span><small data-story-unit="slope">%</small></dd></div><div><dt>고도</dt><dd><span data-story-field="elevation">90</span><small data-story-unit="elevation">m</small></dd></div><div><dt>준공</dt><dd><span data-story-field="year">1995</span><small data-story-unit="year">년</small></dd></div></dl></div>
+          </section>
+          <section class="story-panel" data-story-panel="criteria" aria-labelledby="criteria-title">
+            <div class="story-copy"><h2 id="criteria-title">기준이 바뀌면,<br>도시도 달라집니다.</h2><p>중요한 조건에 더 큰 무게를.<br>가격은 점수에 넣지 않습니다.</p></div>
+            <div class="story-readout"><p><span data-story-field="place">장소 A</span> · 지금의 내 기준</p><strong class="story-amount story-score"><span data-story-field="score">37</span><small data-story-unit="score">점</small></strong></div>
+          </section>
+          <section class="story-panel" data-story-panel="value" aria-labelledby="story-value-title">
+            <div class="story-copy"><h2 id="story-value-title">조건은 비슷하게.<br>가격은 나란히.</h2><p>내 기준 ±5점인 가상 예시 <span data-story-field="peer-count">3</span>곳.<br>같은 조건 옆에 가격을 놓습니다.</p></div>
+            <div class="story-readout"><p><span data-story-field="place">장소 A</span>의 월 환산 단가</p><strong class="story-amount"><span data-story-field="unit">1.70</span><small data-story-unit="unit">만 원 / ㎡</small></strong><p>보증금 연 5% 환산을 가정한 예시입니다.</p></div>
+          </section>
         </div>
-        <a class="scroll-invitation" href="#story-conditions">아래로, 가격표 뒤의 조건을 보세요 <span aria-hidden="true">↓</span></a>
-      </section>
-      <div class="story-stage" id="story-stage" data-ui>
-        <div class="story-stage-top"><span>ZIP 예시 도시</span><span id="hero-selection">장소 A · 월세 35만 · 내 기준 37점</span></div>
-        <div id="story-city" class="city-render story-city"><img class="city-poster" src="./assets/city-price.svg" alt="같은 가상 장소에 가격과 조건을 겹쳐 읽는 입체 도시 모형" width="1000" height="760" fetchpriority="high"></div>
-        <div class="story-readout" aria-live="off">
-          <div data-story-panel="price"><p><span data-story-field="place">장소 A</span>의 가격표</p><strong class="story-amount"><span data-story-field="rent">35</span><small>만 원 / 월</small></strong><span>보증금 <span data-story-field="deposit">1,000</span>만 · <span data-story-field="area">23</span>㎡</span></div>
-          <div data-story-panel="conditions" hidden><p><span data-story-field="place">장소 A</span>의 조건</p><div class="condition-readout"><strong><span data-story-field="slope">1</span><small><span data-story-unit="slope">%</span> 경사</small></strong><strong><span data-story-field="elevation">90</span><small><span data-story-unit="elevation">m</span> 고도</small></strong><strong><span data-story-field="year">1995</span><small><span data-story-unit="year">년</span> 준공</small></strong></div></div>
-          <div data-story-panel="criteria" hidden><p><span data-story-field="place">장소 A</span>와 내 기준</p><strong class="story-amount story-score"><span data-story-field="score">37</span><small><span data-story-unit="score">점</span> / 내 기준</small></strong><span>가격은 점수에 넣지 않습니다.</span></div>
-          <div data-story-panel="value" hidden><p><span data-story-field="place">장소 A</span>의 월 환산 단가</p><strong class="story-amount"><span data-story-field="unit">1.70</span><small>만 원 / ㎡</small></strong><span>내 기준 ±5점인 예시 <span data-story-field="peer-count">3</span>곳과 함께 읽습니다.</span></div>
-        </div>
-        <div class="story-stage-bottom"><p id="story-caption">청록색이 진할수록 면적당 월 환산 가격이 높습니다.</p><div id="story-legend" class="map-legend" role="group" aria-label="현재 도시의 색 범례"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>높음</span></div></div>
-        <nav class="story-chapters" aria-label="장소 읽기 순서"><a href="#story-price" data-story-link="price" aria-current="step">가격</a><a href="#story-conditions" data-story-link="conditions">조건</a><a href="#story-criteria" data-story-link="criteria">내 기준</a><a href="#story-value" data-story-link="value">가격 비교</a></nav>
+        <div class="story-actions"><a class="button button-light" href="#experience">가상 예시로 체험하기 <span aria-hidden="true">↗</span></a><nav class="story-chapters" aria-label="장소 읽기 순서"><a href="#story-price" data-story-link="price" aria-current="step">가격</a><a href="#story-conditions" data-story-link="conditions">조건</a><a href="#story-criteria" data-story-link="criteria">내 기준</a><a href="#story-value" data-story-link="value">가격 비교</a></nav></div>
+        <div class="story-stage-bottom"><div><p id="hero-selection">장소 A · 월세 35만 · 내 기준 37점</p><p id="story-caption">청록색이 진할수록 면적당 월 환산 가격이 높습니다.</p></div><div id="story-legend" class="map-legend" role="group" aria-label="현재 도시의 색 범례"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>높음</span></div></div>
       </div>
-      <section class="story-step conditions-step" id="story-conditions" data-story-step="conditions" aria-labelledby="conditions-title">
-        <div class="story-copy"><h2 id="conditions-title" data-reveal>가격표 뒤에<br>다른 조건이 있습니다</h2><p data-reveal>매일 오를 길, 건물이 지어진 때, 장소의 높이. 따로 보던 정보를 같은 장소 위에 놓습니다.</p><dl class="story-facts" data-reveal><div><dt>매일 오를 길</dt><dd>경사 <strong data-story-field="slope">1</strong><span data-story-unit="slope">%</span></dd></div><div><dt>장소의 높이</dt><dd>고도 <strong data-story-field="elevation">90</strong><span data-story-unit="elevation">m</span></dd></div><div><dt>건물이 지어진 때</dt><dd><strong data-story-field="year">1995</strong><span data-story-unit="year">년</span></dd></div></dl><p class="story-note"><span data-story-field="place">장소 A</span>, 가격표와 같은 장소입니다.</p></div>
-      </section>
-      <section class="story-step criteria-step" id="story-criteria" data-story-step="criteria" aria-labelledby="criteria-title">
-        <div class="story-copy"><h2 id="criteria-title" data-reveal>중요한 조건부터<br>도시가 달라집니다</h2><p data-reveal>완만한 길이 먼저인 사람도, 새로운 건물이 먼저인 사람도 있으니까. ZIP의 기준은 내가 정합니다.</p><div class="story-score-block" data-ui data-reveal><p><span data-story-field="place">장소 A</span> · 체험에서 정한 중요도로 보면</p><strong><span data-story-field="score">37</span><small data-story-unit="score">점</small></strong><span>가격은 점수에 넣지 않습니다.</span></div><p class="story-note">이 점수는 체험에서 정한 중요도에 따라 바뀝니다.</p></div>
-      </section>
-      <section class="story-step value-step" id="story-value" data-story-step="value" aria-labelledby="story-value-title">
-        <div class="story-copy"><h2 id="story-value-title" data-reveal>비슷한 조건이라면<br>가격은 어떨까요</h2><p data-reveal>조건이 비슷한 장소끼리, 어떤 예시 가격 차이가 있는지 나란히 봅니다.</p><div class="story-price-comparison" data-ui data-reveal><p><span data-story-field="place">장소 A</span>의 월 환산 단가</p><strong><span data-story-field="unit">1.70</span><small>만 원 / ㎡</small></strong><p>내 기준 ±5점인 예시 <span data-story-field="peer-count">3</span>곳</p><p data-story-field="peers">장소 F 3.91만/㎡, 장소 K 3.41만/㎡, 장소 P 2.54만/㎡</p></div><p class="story-note">선택한 장소는 비교에서 제외합니다. 비교 표본이 5곳 미만이면 퍼센트로 요약하지 않습니다.</p><a class="text-link" href="#experience">이제, 내 기준을 바꿔보기 <span aria-hidden="true">↗</span></a></div>
-      </section>
     </section>
 
     <section class="experience section-pad" id="experience" aria-labelledby="experience-title">
-      <div class="section-heading"><h2 id="experience-title" data-reveal>이번에는<br>당신의 기준으로</h2><div class="section-lead" data-reveal><p>가장 중요한 조건의 막대를 움직여보세요. 도시의 색과 선택한 장소, 아래 비교가 함께 바뀝니다.</p><p class="section-note">예시 A·B·C가 처음부터 비교에 담겨 있습니다.</p></div></div>
+      <div class="section-heading"><h2 id="experience-title" data-reveal>이제, 당신의<br>기준을 움직여보세요.</h2><div class="section-lead" data-reveal><p>세 가지 중요도를 움직여보세요.<br>도시의 색과 선택의 이유가 함께 바뀝니다.</p><p class="section-note">예시 A·B·C가 처음부터 비교에 담겨 있습니다.</p></div></div>
       <div class="experience-stage">
         <div class="experience-map" data-ui>
           <div class="experience-map-header"><span>내 기준으로 보는 도시</span><span id="map-state-label">모두 같은 중요도</span></div>
           <div class="segmented" role="group" aria-label="도시를 보는 주제"><button type="button" disabled data-needs-js data-mode="price" aria-pressed="false">가격</button><button type="button" disabled data-needs-js data-mode="score" aria-pressed="true">내 기준</button><button type="button" disabled data-needs-js data-mode="value" aria-pressed="false">가격 대비</button><button type="button" disabled data-needs-js data-mode="terrain" aria-pressed="false">지형</button></div>
-          <div id="experience-city" class="city-render experience-city"><img class="city-poster" src="./assets/city-score.svg" alt="내 기준 점수를 보라색으로 구분한 가상 도시. 건물 선택은 오른쪽의 장소 버튼으로도 할 수 있습니다." width="1000" height="760" loading="lazy"></div>
+          <div id="experience-city" class="city-render experience-city"><img class="city-poster" src="./assets/city-score.svg" alt="내 기준 점수를 보라색으로 구분한 가상 도시. 건물 선택은 아래의 장소 버튼으로도 할 수 있습니다." width="1000" height="760" loading="lazy"></div>
           <p id="experience-scene-status" class="scene-status">건물을 누르거나 장소 버튼으로 선택하세요.</p>
           <div class="platform-bottom"><p id="mode-description">보라색이 진할수록 지금의 내 기준 점수가 높습니다. 빗금은 자료 없음입니다.</p><div id="platform-legend" class="map-legend" role="group" aria-label="지도 색 범례"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>높음</span></div></div>
           <details class="camera-details"><summary>모형 시점 조절</summary><div class="scene-controls" data-scene="experience" role="group" aria-label="도시 모형 시점 조절"><button type="button" data-scene-action="view-overview" disabled>사선</button><button type="button" data-scene-action="view-plan" disabled>내려다보기</button><button type="button" data-scene-action="view-focus" disabled>선택 확대</button><button type="button" data-scene-action="left" aria-label="도시 왼쪽으로 회전" disabled>↶</button><button type="button" data-scene-action="right" aria-label="도시 오른쪽으로 회전" disabled>↷</button><button type="button" data-scene-action="zoom-in" aria-label="도시 모형 확대" disabled>+</button><button type="button" data-scene-action="zoom-out" aria-label="도시 모형 축소" disabled>−</button><button type="button" data-scene-action="reset" disabled>처음 시점</button></div></details>
         </div>
         <div class="criteria-panel" data-ui>
           <div class="criteria-heading"><h3>나의 중요도</h3><button type="button" disabled data-needs-js class="text-button" id="reset-weights">같게 맞추기</button></div>
+          <div class="criteria-sliders">
           <div class="criteria-row"><div><label for="weight-slope">완만한 경사</label><output id="ratio-slope" for="weight-slope">33%</output></div><input type="range" id="weight-slope" min="0" max="100" step="any" value="50" disabled data-needs-js aria-describedby="help-slope"><p id="help-slope">오르막이 덜한 곳을 중요하게 봅니다.</p></div>
           <div class="criteria-row"><div><label for="weight-elevation">낮은 고도</label><output id="ratio-elevation" for="weight-elevation">33%</output></div><input type="range" id="weight-elevation" min="0" max="100" step="any" value="50" disabled data-needs-js aria-describedby="help-elevation"><p id="help-elevation">낮은 지대의 장소를 중요하게 봅니다.</p></div>
           <div class="criteria-row"><div><label for="weight-age">새로운 건물</label><output id="ratio-age" for="weight-age">33%</output></div><input type="range" id="weight-age" min="0" max="100" step="any" value="50" disabled data-needs-js aria-describedby="help-age"><p id="help-age">최근에 지어진 건물을 중요하게 봅니다.</p></div>
+          </div>
           <p class="weight-note" id="weights-note">가격은 점수에 넣지 않습니다.</p>
-          <div class="candidate-picker" role="group" aria-label="살펴볼 예시 장소"><button type="button" disabled data-needs-js data-select="a" aria-pressed="true">장소 A</button><button type="button" disabled data-needs-js data-select="b" aria-pressed="false">장소 B</button><button type="button" disabled data-needs-js data-select="c" aria-pressed="false">장소 C</button></div>
-          <details class="all-places"><summary>예시 건물 전체 보기</summary><div id="all-buildings" role="group" aria-label="전체 예시 건물 선택"></div></details>
-          <div id="selected-summary" class="selected-summary"><p>장소 A</p><strong>37<small>점 / 내 기준</small></strong><span>보증금 1,000만 · 월세 35만 · 23㎡</span><div class="selected-conditions"><span>경사 1%</span><span>고도 90m</span><span>1995년</span></div></div>
-          <button type="button" disabled data-needs-js class="button button-light" id="save-selected">비교에 담은 장소입니다</button><a class="comparison-link" href="#comparison">담은 장소 비교하기 <span aria-hidden="true">↓</span></a>
+          <div class="selection-workspace">
+            <div class="selection-picker"><div class="candidate-picker" role="group" aria-label="살펴볼 예시 장소"><button type="button" disabled data-needs-js data-select="a" aria-pressed="true">장소 A</button><button type="button" disabled data-needs-js data-select="b" aria-pressed="false">장소 B</button><button type="button" disabled data-needs-js data-select="c" aria-pressed="false">장소 C</button></div>
+          <details class="all-places"><summary>예시 건물 전체 보기</summary><div id="all-buildings" role="group" aria-label="전체 예시 건물 선택"></div></details></div>
+            <div class="selection-result"><div id="selected-summary" class="selected-summary"><p>장소 A</p><strong>37<small>점 / 내 기준</small></strong><span>보증금 1,000만 · 월세 35만 · 23㎡</span><div class="selected-conditions"><span>경사 1%</span><span>고도 90m</span><span>1995년</span></div></div>
+          <button type="button" disabled data-needs-js class="button button-dark" id="save-selected">비교에 담은 장소입니다</button><a class="comparison-link" href="#comparison">담은 장소 비교하기 <span aria-hidden="true">↓</span></a></div>
+          </div>
         </div>
       </div>
       <details class="price-method" open><summary>가격을 읽는 방법</summary><div class="value-calculation" data-ui><div id="value-result"><strong>비슷한 예시 3곳의 가격을 함께 봅니다</strong><span>선택한 곳 1.70만/㎡ · 비교: 장소 F 3.91만/㎡, 장소 K 3.41만/㎡, 장소 P 2.54만/㎡. 비교 대상이 적어 퍼센트로 요약하지 않습니다.</span></div><p class="calculation-note">월 환산 단가 = (월세 + 보증금 × 연 5% ÷ 12) ÷ 면적. 연 5%는 체험용 가정이며 관리비는 포함하지 않습니다. 선택 장소를 제외하고 내 기준 ±5점인 예시끼리 비교합니다.</p></div></details>
@@ -90,7 +92,7 @@
     </section>
 
     <section class="comparison section-pad" id="comparison" aria-labelledby="comparison-title">
-      <div class="section-heading"><h2 id="comparison-title" data-reveal>정답 대신,<br>선택할 이유를</h2><div class="section-lead" data-reveal><p>가격과 조건을 나란히 놓으면, 무엇을 얻고 무엇을 감수할지 보입니다.</p></div></div>
+      <div class="section-heading"><h2 id="comparison-title" data-reveal><span data-compare-heading>세 곳의 차이,</span><br><span data-compare-subheading>선택할 이유가 됩니다.</span></h2><div class="section-lead" data-reveal><p>가격과 조건을 나란히 놓으면, 무엇을 얻고 무엇을 감수할지 보입니다.</p></div></div>
       <div class="compare-toolbar"><p id="saved-count">담은 장소 3 / 3</p><div><button type="button" disabled data-needs-js class="text-button" id="reset-demo">체험 초기화</button><button type="button" disabled data-needs-js class="button button-dark" id="share-state">내 기준 링크 복사 <span aria-hidden="true">↗</span></button></div></div>
       <div id="saved-places" class="saved-places" role="group" aria-label="담은 예시 장소" data-ui>
         <section class="saved-place is-selected"><button type="button" disabled data-needs-js data-select="a" aria-pressed="true" aria-label="장소 A, 내 기준 37점. 보증금 1,000만, 월세 35만, 23㎡. 경사 1%, 고도 90m, 1995년. 살펴보기"><span class="place-id">A</span><span class="place-score">37<small>점 / 내 기준</small></span><span class="place-price">보증금 1,000만 · 월세 35만</span><span class="place-facts">23㎡ · 경사 1% · 고도 90m · 1995년</span></button><button type="button" disabled data-needs-js data-remove="a" aria-label="장소 A 비교에서 빼기">빼기 <span aria-hidden="true">×</span></button></section>
@@ -102,9 +104,9 @@
       <p class="demo-disclosure">점수는 이 예시 집합 안에서 계산합니다. 실제 관악구의 순위나 시장 가격 평가가 아닙니다.</p>
     </section>
 
-    <section class="data-section section-pad" id="data" aria-labelledby="data-title"><div class="data-heading"><h2 id="data-title" data-reveal>보이는 숫자에<br>근거를 남깁니다</h2><p data-reveal>어디서 왔는지, 언제의 값인지, 얼마나 모였는지. 모르는 값은 모른다고 표시합니다.</p></div><dl class="data-principles"><div data-reveal><dt>신고 계약</dt><dd>현재 매물이나 호가가 아닙니다. 신고된 거래를 기준 기간과 함께 봅니다.</dd></div><div data-reveal><dt>추정한 조건</dt><dd>지형과 경사는 계산한 값입니다. 방법과 한계를 함께 표시합니다.</dd></div><div data-reveal><dt>비슷한 건물 묶음</dt><dd>위치가 가려진 거래를 개별 건물의 확정 가격처럼 보여주지 않습니다.</dd></div><div data-reveal><dt>자료 없음</dt><dd>0이나 나쁜 조건으로 채우지 않습니다. 점수에서 빠진 조건도 알 수 있습니다.</dd></div></dl></section>
+    <section class="data-section section-pad" id="data" aria-labelledby="data-title"><div class="data-heading"><h2 id="data-title" data-reveal>모르는 것은,<br>모른다고.</h2><p data-reveal>숫자마다 출처와 한계를 남기는 것이 ZIP의 방향입니다. 지금은 가상 데이터로 그 방식을 보여드립니다.</p></div><dl class="data-principles"><div data-reveal><dt>신고 계약</dt><dd>현재 매물이나 호가가 아닙니다. 신고된 거래를 기준 기간과 함께 봅니다.</dd></div><div data-reveal><dt>추정한 조건</dt><dd>지형과 경사는 계산한 값입니다. 방법과 한계를 함께 표시합니다.</dd></div><div data-reveal><dt>비슷한 건물 묶음</dt><dd>위치가 가려진 거래를 개별 건물의 확정 가격처럼 보여주지 않습니다.</dd></div><div data-reveal><dt>자료 없음</dt><dd>0이나 나쁜 조건으로 채우지 않습니다. 점수에서 빠진 조건도 알 수 있습니다.</dd></div></dl></section>
     <section class="faq section-pad" aria-label="자주 묻는 질문"><div class="faq-intro"><h2 data-reveal>미리 알아둘 것</h2><p>지금 보여드리는 범위와<br>앞으로 만들 범위를 구분합니다.</p></div><div class="faq-answers"><p data-reveal><strong>지금 실제 서비스를 이용할 수 있나요?</strong> ZIP은 개발 중입니다. 이 페이지에서는 서비스의 방향과 작동 방식을 가상의 도시와 예시 데이터로 체험할 수 있습니다.</p><p data-reveal><strong>가격은 현재 매물 가격인가요?</strong> 제품은 신고 계약을 바탕으로 장소를 비교하는 방향입니다. 현재 매물·호가를 제공하지 않으며, 이 페이지의 금액은 모두 설명용 가상 값입니다.</p><p data-reveal><strong>어디서부터 시작하나요?</strong> 첫 범위는 관악구의 가격·건물·지형입니다. 교통, 생활시설, 인구와 상권, 소음, 침수·날씨·햇빛은 이후 확장할 계획입니다.</p></div></section>
-    <section class="closing section-pad" aria-labelledby="closing-title"><h2 id="closing-title" data-reveal>가격표를 넘어,<br>나의 선택으로.</h2><div data-reveal><p>중요한 조건을 정하고,<br>장소를 다시 읽어보세요.</p><a class="button button-light" href="#experience">내 기준으로 체험하기 <span aria-hidden="true">↗</span></a></div></section>
+    <section class="closing section-pad" aria-labelledby="closing-title"><h2 id="closing-title" data-reveal>이제,<br>당신의 기준으로.</h2><div data-reveal><p>중요한 조건을 정하고,<br>장소를 다시 읽어보세요.</p><a class="button button-light" href="#experience">내 기준으로 체험하기 <span aria-hidden="true">↗</span></a></div><img class="closing-wordmark" src="./assets/logo.svg" width="164" height="64" alt="ZIP"></section>
   </main>
   <footer class="site-footer section-pad"><a class="brand" href="#story-price" aria-label="ZIP 첫 화면"><img src="./assets/logo.svg" width="84" height="30" alt="ZIP"></a><p>© 2026 ZIP · 개발 중 · 가상 데이터 체험</p><a href="https://github.com/YeByeol/ZipLanding" target="_blank" rel="noopener noreferrer">GitHub에서 보기 <span aria-hidden="true">↗</span></a></footer>
   <div id="toast" class="toast" role="status" aria-live="polite"></div>

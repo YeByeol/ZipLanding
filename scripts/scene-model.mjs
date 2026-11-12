@@ -31,6 +31,43 @@ export function viewForProgress(progress, current = DEFAULT_VIEW, { manual = fal
   return { yaw: DEFAULT_VIEW.yaw + (p - .5) * .28, pitch: DEFAULT_VIEW.pitch + (p - .5) * .12 };
 }
 
+// Narrative framing is bounded separately from the experience's manual zoom.
+export function clampPresentation(frame = {}) {
+  const next = frame ?? {};
+  const bound = (value, min, max, fallback) => Number.isFinite(value) ? Math.max(min, Math.min(max, value)) : fallback;
+  return {
+    ...clampView(next), zoom: bound(next.zoom, .7, 4.8, 1),
+    target: {
+      x: bound(next.target?.x, -4.4, 4.4, 0),
+      y: bound(next.target?.y, 0, 2.5, .28),
+      z: bound(next.target?.z, -3.25, 3.25, 0),
+    },
+  };
+}
+
+export function presentationForProgress(progress, building, { reduced = false } = {}) {
+  const center = { x: 0, y: .28, z: 0 };
+  const valid = building && [building.x, building.y, building.height].every(Number.isFinite) && building.height >= 0;
+  const selected = valid ? { ...buildingPosition(building), y: building.height / 78 + .14 } : center;
+  const frames = [
+    { at: 0, yaw: .72, pitch: .68, zoom: 1, target: center },
+    { at: .3, yaw: .5, pitch: .86, zoom: 4.2, target: selected },
+    { at: .62, yaw: .95, pitch: .8, zoom: 1.05, target: center },
+    { at: 1, yaw: .12, pitch: 1.08, zoom: 1.1, target: center },
+  ];
+  const p = reduced ? 0 : clampProgress(progress);
+  const exact = frames.find(frame => frame.at === p);
+  if (exact) return clampPresentation(exact);
+  const index = frames.findIndex(frame => frame.at > p);
+  const from = frames[index - 1], to = frames[index];
+  const amount = (p - from.at) / (to.at - from.at);
+  const mix = (a, b) => a + (b - a) * amount;
+  return clampPresentation({
+    yaw: mix(from.yaw, to.yaw), pitch: mix(from.pitch, to.pitch), zoom: mix(from.zoom, to.zoom),
+    target: Object.fromEntries(['x', 'y', 'z'].map(key => [key, mix(from.target[key], to.target[key])])),
+  });
+}
+
 export const isClick = (dx, dy) => Math.hypot(dx, dy) < 6;
 
 export function dragIntent(dx, dy, pointerType = 'mouse') {

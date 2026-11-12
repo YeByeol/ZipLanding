@@ -13,8 +13,8 @@ test('story phases follow the midline forward and backward, including boundaries
     [[-2000, -1200, -400, 400], 'value'], [[-1200, -400, 400, 1200], 'criteria'],
     [[-400, 400, 1200, 2000], 'conditions'], [[400, 1200, 2000, 2800], 'price'],
   ]) assert.equal(storyPhaseForSteps(positions(tops), 800).phase, expected);
-  assert.equal(storyPhaseForSteps(positions([400, 1200, 2000, 2800]), 800).progress, 0);
-  assert.equal(storyPhaseForSteps(positions([-800, 0, 800, 1600]), 800).progress, .5);
+  assert.equal(storyPhaseForSteps(positions([0, 800, 1600, 2400]), 800).progress, 0);
+  assert.equal(storyPhaseForSteps(positions([-800, 0, 800, 1600]), 800).progress, 1 / 3);
   assert.equal(storyPhaseForSteps(positions([-2800, -2000, -1200, -400]), 800).progress, 1);
 });
 
@@ -35,7 +35,8 @@ function node(dataset = {}) {
 }
 
 function fixture() {
-  let tops = [400, 1200, 2000, 2800];
+  let tops = [0, 800, 1600, 2400];
+  let lowHeight = false;
   let bounds = { top: 0, bottom: 3600 };
   const phases = ['price', 'conditions', 'criteria', 'value'];
   const steps = phases.map((phase, index) => ({ ...node({ storyStep: phase }), getBoundingClientRect: () => ({ top: tops[index] }) }));
@@ -45,13 +46,13 @@ function fixture() {
   const units = ['slope', 'elevation', 'year', 'score', 'score'].map(key => node({ storyUnit: key }));
   const swatches = Array.from({ length: 5 }, () => node());
   const caption = node(), selection = node(), legend = { ...node(), querySelectorAll: () => swatches };
-  const root = { ...node(), getBoundingClientRect: () => bounds, ownerDocument: { defaultView: { innerHeight: 800 } },
+  const root = { ...node(), getBoundingClientRect: () => bounds, ownerDocument: { defaultView: { innerHeight: 800, matchMedia: query => ({ get matches() { return query === '(max-height: 620px)' && lowHeight; } }) } },
     querySelectorAll: selector => ({ '[data-story-step]': steps, '[data-story-panel]': panels, '[data-story-link]': links, '[data-story-field]': fields, '[data-story-unit]': units }[selector] ?? []),
     querySelector: selector => ({ '#story-caption': caption, '#story-legend': legend, '#hero-selection': selection }[selector]),
   };
   const element = node(), sceneStates = [], progress = [];
-  const controller = mountStory({ root, element, owner: { update: state => sceneStates.push(state), setProgress: value => progress.push(value) } });
-  return { controller, root, element, panels, links, fields, units, swatches, caption, selection, sceneStates, progress, setTops: value => { tops = value; }, setBounds: value => { bounds = value; } };
+  const controller = mountStory({ root, element, owner: { update: state => sceneStates.push(state), setPresentation: value => progress.push(value) } });
+  return { controller, root, element, panels, links, fields, units, swatches, caption, selection, sceneStates, progress, setTops: value => { tops = value; }, setBounds: value => { bounds = value; }, setLowHeight: value => { lowHeight = value; } };
 }
 
 test('story controller changes only its view, shares computed fields, and suppresses idle updates', () => {
@@ -105,30 +106,61 @@ test('reduced motion keeps current phase information and missing fields, with a 
   assert.match(view.caption.textContent, /보라/);
   assert.ok(view.fields.filter(field => ['slope', 'elevation', 'year', 'score'].includes(field.dataset.storyField)).every(field => field.dataset.missing === 'true'));
   assert.ok(view.units.every(unit => unit.hidden), 'missing values hide all repeated numeric units');
-  assert.deepEqual(view.progress, []);
+  assert.equal(view.progress.at(-1).zoom, 1);
   view.setTops([-400, 400, 1200, 2000]);
   view.controller.updateScroll({ reduced: true });
   assert.equal(view.root.dataset.storyPhase, 'conditions');
   assert.equal(view.sceneStates.at(-1).mode, 'terrain');
-  assert.deepEqual(view.progress, []);
+  assert.equal(view.progress.length, 1, 'reduced motion does not repeat stationary frames');
   view.controller.update({ mode: 'score', selected: 'a', saved: ['a'], weights: { slope: 50, elevation: 50, age: 50 } });
   assert.ok(view.fields.every(field => field.dataset.missing === 'false'));
   assert.ok(view.units.every(unit => !unit.hidden), 'choosing valid values restores every numeric unit');
 });
 
 
-test('story enhanced active range follows viewport boundaries and is removed on destroy', () => {
+
+test('low viewport height exposes every panel, keeps values current and stops camera work', () => {
   const view = fixture();
+  view.setLowHeight(true);
+  view.controller.updateScroll();
+  assert.equal(view.root.dataset.storyEnhanced, 'false');
+  assert.ok(view.panels.every(panel => !panel.hidden && panel.getAttribute('aria-hidden') === 'false'));
+  assert.equal(view.progress.length, 0);
+  view.controller.update({ selected: 'x', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
+  assert.equal(view.fields.find(field => field.dataset.storyField === 'score').textContent, '자료 없음');
+  assert.equal(view.progress.length, 0);
+  view.setLowHeight(false);
+  view.controller.updateScroll();
   assert.equal(view.root.dataset.storyEnhanced, 'true');
-  for (const [bounds, expected] of [
-    [{ top: 800, bottom: 4000 }, 'false'], [{ top: 799, bottom: 4000 }, 'true'],
-    [{ top: -2200, bottom: 721 }, 'true'], [{ top: -2200, bottom: 720 }, 'false'],
-    [{ top: 0, bottom: 3600 }, 'true'],
-  ]) {
-    view.setBounds(bounds); view.controller.updateScroll({ reduced: true });
-    assert.equal(view.root.dataset.storyActive, expected);
-  }
+  assert.equal(view.panels.filter(panel => !panel.hidden).length, 1);
+  assert.equal(view.progress.length, 1);
+  assert.equal(view.root.dataset.storyActive, undefined);
   view.controller.destroy();
   assert.equal(view.root.dataset.storyEnhanced, undefined);
-  assert.equal(view.root.dataset.storyActive, undefined);
+  assert.ok(view.panels.every(panel => !panel.hidden));
+});
+
+test('camera begins wide at first waypoint and retargets selected buildings at current scroll', () => {
+  const view = fixture();
+  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
+  view.controller.updateScroll();
+  assert.equal(view.progress.at(-1).zoom, 1);
+  view.setTops([-720, 80, 880, 1680]);
+  view.controller.updateScroll();
+  assert.equal(view.progress.at(-1).zoom, 4.2);
+  assert.ok(Math.abs(view.progress.at(-1).target.x + 2.975) < 1e-12);
+  view.controller.update({ selected: 'b', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
+  assert.ok(Math.abs(view.progress.at(-1).target.x + 1.845) < 1e-12);
+  view.setTops([0, 800, 1600, 2400]); view.controller.updateScroll();
+  assert.equal(view.progress.at(-1).zoom, 1);
+});
+
+test('twenty peers stay a three-place preview and retain an explicit remaining count', () => {
+  const view = fixture();
+  view.controller.update({ selected: 'b', saved: [], weights: { slope: 50, elevation: 50, age: 0 } });
+  const text = view.fields.find(field => field.dataset.storyField === 'peers').textContent;
+  assert.equal(view.fields.find(field => field.dataset.storyField === 'peer-count').textContent, '20');
+  assert.equal((text.match(/장소 /g) ?? []).length, 3);
+  assert.match(text, /외 17곳/);
+  assert.ok(text.length < 100);
 });

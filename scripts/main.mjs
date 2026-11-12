@@ -106,6 +106,15 @@ function cell(text, { header = false, scope, selected = false, className = '', s
 }
 
 function renderComparison() {
+  const titles = [
+    ['비교할 장소를,', '나란히 놓아보세요.'],
+    ['한 장소의 조건,', '이렇게 살펴보세요.'],
+    ['두 곳의 차이,', '선택할 이유가 됩니다.'],
+    ['세 곳의 차이,', '선택할 이유가 됩니다.'],
+  ][state.saved.length];
+  const heading = $('[data-compare-heading]'), subheading = $('[data-compare-subheading]');
+  if (heading) heading.textContent = titles[0];
+  if (subheading) subheading.textContent = titles[1];
   $('#saved-count').textContent = `담은 장소 ${state.saved.length} / 3`;
   const places = $('#saved-places');
   // Keep focus on a surviving control when the comparison is redrawn.

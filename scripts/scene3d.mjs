@@ -1,6 +1,6 @@
 import { BUILDINGS } from './demo.mjs';
 import { colorFor, mountCity } from './city.mjs';
-import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset } from './scene-model.mjs';
+import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset, clampPresentation, presentationForProgress } from './scene-model.mjs';
 
 let threePromise;
 const loadThree = () => threePromise ||= import('../vendor/three.module.js');
@@ -414,6 +414,16 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
         item.missingMark.visible = color === '#d9d6cf';
       }
       requestRender();
+    },
+    setPresentation(frame) {
+      if (destroyed || interactive || manual) return;
+      const next = reduced ? presentationForProgress(0) : clampPresentation(frame);
+      targetView = { yaw: next.yaw, pitch: next.pitch };
+      targetCenter = { ...next.target };
+      targetZoom = next.zoom;
+      preset = 'story';
+      if (reduced) { view = { ...targetView }; target = { ...targetCenter }; zoom = targetZoom; }
+      publishView(); requestRender();
     },
     setProgress(value) {
       progress = clampProgress(value);
