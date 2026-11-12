@@ -44,6 +44,6 @@
 - [x] Freshwholebranchreviewagainst2b5bfbf; spec+code+20peer/320failureboundaries.
 - [x] Batchedfirst/macro/wide/planandmobileactualscreens; onefixbatch+oneconfirm. Focalmotionrealviewportpositions notclaimanimationfromtests.
 - [x] Native/keyboard/sliders/sharedstate, reversecamera, manualexperiencecamera, empty/missing/longpeer, noJS/WebGLfallback/reduced. Axeandsource/Taste; detectoronlyasneededforchangednewworld,recordactualexceptions.
-- [ ] tests/check/export+scopedstaging, sourcecommit+ffmain+pushalreadyapproved. Actions+freshpublicUI+assetbytes+390verify. RecordsourceSHA, docs-onlyreceiptcommit, cleanupownbrowser/branch.
+- [x] tests/check/export+scopedstaging, sourcecommit+ffmain+pushalreadyapproved. Actions+freshpublicUI+assetbytes+390verify. RecordsourceSHA, docs-onlyreceiptcommit, cleanupownbrowser/branch.
 
 제작 검토 defaults는 spec 마지막 절을 우선한다. Body-fixed가 아닌 stage 내부 배치, lowheight<=620px JS/CSS 동기화, 공통 CTA, 동적 비교 제목을 두 Task 인터페이스에 포함한다.

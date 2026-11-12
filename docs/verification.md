@@ -141,3 +141,10 @@ v1.2 공개 배포 확인:
 - Impeccable detector의 실제 hover 대비 문제는 어두운 버튼 패턴으로 수정했다. 점수용 보라 의미는 확정 브랜드로 유지하며, 표/section의 padding 경고는 실제 부모 gutter·셀 padding과 화면으로 판단했다. 새 초기화·두 번째 테마를 추가하지 않았다.
 
 브라우저 viewport·CDP 검증이며 실제 휴대폰 GPU·배터리·FPS는 측정하지 않았다. 모든 장소·금액·점수는 가상 예시이고 실제 서비스·실거래 지도 배포가 아니다.
+
+v2.0 공개 배포 확인:
+
+- 배포 소스 `2b6815db9797213f4d2bd993a6d5f22346f61e2c`.
+- Actions https://github.com/YeByeol/ZipLanding/actions/runs/43164237428 — completed / success.
+- https://yebyeol.github.io/ZipLanding/ 공개 브라우저 **6/6**: 새 전폭 hero, 실제 장 링크의 확대 전환, 넓은 점수 전환, 위에서 보는 가격 전환, 실제 키보드 중요도 조작,390px overflow 없음.
+- 공개 HTML·CSS·main·motion·story·scene3d·scene-model **7개 HTTP200/로컬 검증 소스와 바이트 일치**.
