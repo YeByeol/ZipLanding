@@ -102,3 +102,17 @@ test('automatic criteria colors stay continuous across discrete interactive scor
  assert.ok(rgb(a).every((value,index)=>Math.abs(value-rgb(z)[index])<=1),'film colors cannot jump at interactive bin boundaries');
  assert.deepEqual(model.filmSnapshot(p-1e-7,'closing').frame,before.frame);
 });
+
+test('monthly cost summary reuses the unrounded unit conversion and remains fixed through the story',()=>{
+ const a=BUILDINGS.find(building=>building.id==='a');
+ const total=monthlyUnit(a)*a.area,depositMonthly=total-a.rent;
+ const expected={'monthly-cost':total.toFixed(2),'deposit-monthly':depositMonthly.toFixed(2)};
+ assert.deepEqual(expected,{'monthly-cost':'39.17','deposit-monthly':'4.17'});
+ for(const progress of [0,.4,5/7,6/7,1])for(const options of [{},{reduced:true},{complete:true}]){
+  const fields=model.filmSnapshot(progress,undefined,options).fields;
+  assert.equal(fields['monthly-cost'],expected['monthly-cost']);
+  assert.equal(fields['deposit-monthly'],expected['deposit-monthly']);
+  assert.notEqual(fields['monthly-cost'],(Number(fields.unit)*a.area).toFixed(2),'do not multiply the rounded1.70 display back into a monthly total');
+  assert.ok(Math.abs(Number(fields['monthly-cost'])-Number(fields['deposit-monthly'])-a.rent)<1e-12);
+ }
+});

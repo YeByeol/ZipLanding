@@ -29,6 +29,9 @@ export function filmSnapshot(progress, previousPhase, {reduced=false,complete=fa
   const fields={};
   for(const key of ['rent','deposit','area','slope','elevation','year']) fields[key]=fieldValue(a,key);
   fields.unit=monthlyUnit(a).toFixed(2);
+  const monthlyCost=monthlyUnit(a)*a.area;
+  fields['monthly-cost']=monthlyCost.toFixed(2);
+  fields['deposit-monthly']=(monthlyCost-a.rent).toFixed(2);
   fields['peer-count']=String(comparison.count);
   fields['peer-summary']=comparison.peers.map(peer=>`장소 ${peer.id.toUpperCase()} ${monthlyUnit(peer).toFixed(2)}만/㎡`).join(' · ');
   for(const row of priceBars)fields['unit-'+row.id]=row.unit.toFixed(2);
