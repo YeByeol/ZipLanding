@@ -328,3 +328,10 @@ v3.0 공개 배포 확인:
 - Impeccable detector의 경고는 기존 의미 보라4개와 기존 체험 native table wrapper1개다. 브랜드 의미색을 임의로 바꾸지 않았고, 실제 table cell padding과 새 HUD 여백을 직접 확인했다. 외부 글꼴·의존성·별도 테마는 추가하지 않았다.
 
 물리 휴대폰 FPS/배터리 검증을 주장하지 않는다. 설계 근거는 `superpowers/specs/2026-11-12-zip-information-readability.md`에 기록했다.
+
+v3.1 공개 배포 확인:
+
+- 소스 `ce69561aff074529eac838ba0b3103409ef49141`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43234937318 — completed/success.64개 테스트·syntax·export·Pages 배포가 통과했다.
+- 공개 HTML·CSS·앱·자산 **31개 HTTP200/로컬 소스와 정확한 바이트 일치**.
+- 공개 정보 UI **14/14** 통과. 새 실제 표면·정의 행·전체 단위·수평 bar 원점/비율·환산 비용/가정·compact `가격 제외`·desktop/320 배치·체험창 focus/scroll·reduced·errors0을 다시 확인했다.
+- 공개 script 차단에서도8개 일반 흐름,7개 비교 사실/21개 단위,39.17/4.17과 실제 bar 비율,overflow0을 확인했다. 새 가격·조건·비교·환산의 실제 공개 화면을 별도로 열어 보았다.
