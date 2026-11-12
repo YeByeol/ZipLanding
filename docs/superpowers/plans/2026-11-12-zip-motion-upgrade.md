@@ -15,4 +15,4 @@
 - [x] Task 1: 카메라·진행·드래그 순수 모델과 테스트를 RED→GREEN으로 구현. `scripts/scene-model.mjs`, `tests/scene-model.test.mjs`.
 - [x] Task 2: 실제 WebGL 도시와 SVG 대체, 재질 보간·선택·회전·reset·정리 구현. `scripts/scene3d.mjs`; `city.mjs`의 `colorFor` 재사용.
 - [x] Task 3: root가 시점 버튼·sticky navigation·스크롤 진행·등장과 연결. `index.html`, `styles.css`, `scripts/main.mjs`, `scripts/motion.mjs`. `setProgress(p)`, `rotate(delta)`, `resetView()`는 3D owner의 메서드.
-- [ ] Task 4: 독립 검토·브라우저·접근성·반응형·3D 대체 검증, workflow에 vendor 포함, 같은 공개 URL로 배포하고 실제 동작 확인.
+- [x] Task 4: 독립 검토·브라우저·접근성·반응형·3D 대체 검증, workflow에 vendor 포함, 같은 공개 URL로 배포하고 실제 동작 확인.
