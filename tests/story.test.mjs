@@ -6,24 +6,26 @@ import {filmSnapshot} from '../scripts/film-model.mjs';
 const rects=tops=>tops.map(top=>({top}));
 function node(dataset={}) {
  const attrs=new Map(),vars=new Map();
- return {dataset,style:{setProperty:(k,v)=>vars.set(k,v),getPropertyValue:k=>vars.get(k)??'',removeProperty:k=>vars.delete(k)},hidden:false,textContent:'',setAttribute:(k,v)=>attrs.set(k,String(v)),getAttribute:k=>attrs.get(k)??null,removeAttribute:k=>attrs.delete(k)};
+ return {dataset,style:{setProperty:(k,v)=>vars.set(k,v),getPropertyValue:k=>vars.get(k)??'',removeProperty:k=>vars.delete(k)},hidden:false,tabIndex:-1,scrollTop:0,textContent:'',setAttribute:(k,v)=>attrs.set(k,String(v)),getAttribute:k=>attrs.get(k)??null,removeAttribute:k=>attrs.delete(k)};
 }
-function fixture({clock=false,progressStyle='',onPhaseChange}={}) {
+function fixture({clock=false,progressStyle='',onPhaseChange,nav=false,legacyLinks=true}={}) {
  let p=0,low=false,time=0,nextFrame=1;const rafs=new Map();
  const document=Object.assign(new EventTarget(),{hidden:false});
  const viewport={innerHeight:800,matchMedia:q=>({get matches(){return q==='(max-height: 620px)'&&low;}})};
  if(clock){viewport.performance={now:()=>time};viewport.requestAnimationFrame=fn=>{const id=nextFrame++;rafs.set(id,fn);return id;};viewport.cancelAnimationFrame=id=>rafs.delete(id);}
  document.defaultView=viewport;
  const steps=PHASES.map((phase,i)=>({...node({storyStep:phase}),getBoundingClientRect:()=>({top:i*1120-p*7840})}));
- const panels=PHASES.map(phase=>node({storyPanel:phase})),links=PHASES.map(phase=>node({storyLink:phase}));
+ const panels=PHASES.map(phase=>node({storyPanel:phase})),links=legacyLinks?PHASES.map(phase=>node({storyLink:phase})):[];
  const names=Object.keys(filmSnapshot(0).fields),fields=names.map(name=>node({filmField:name}));
  const weights=['slope','elevation','age'].map(name=>node({filmWeight:name}));
  const swatches=Array.from({length:5},()=>node()),caption=node(),selection=node();
- const root={...node(),ownerDocument:document,querySelectorAll:s=>({'[data-story-step]':steps,'[data-story-panel]':panels,'[data-story-link]':links,'[data-film-field]':fields,'[data-film-weight]':weights}[s]??[]),querySelector:s=>({'#story-caption':caption,'#story-legend':{querySelectorAll:()=>swatches},'#hero-selection':selection}[s])};
+ const previous={...node(),disabled:true},next={...node(),disabled:true};
+ const chapterSelect={...node(),options:PHASES.map((value,i)=>({value,textContent:['발견','가격','조건','내 기준','장소 비교','가격 환산','근거','마무리'][i]})),focus(){document.activeElement=chapterSelect;}};
+ const root={...node(),ownerDocument:document,querySelectorAll:s=>({'[data-story-step]':steps,'[data-story-panel]':panels,'[data-story-link]':links,'[data-film-field]':fields,'[data-film-weight]':weights}[s]??[]),querySelector:s=>({'#story-caption':caption,'#story-legend':{querySelectorAll:()=>swatches},'#hero-selection':selection,'#story-chapter-select':nav?chapterSelect:undefined,'[data-story-prev]':nav?previous:undefined,'[data-story-next]':nav?next:undefined}[s])};
  if(progressStyle)root.style.setProperty('--film-progress',progressStyle);
  const element=node(),frames=[],updates=[];
  const controller=mountStory({root,element,onPhaseChange,owner:{setPresentation:f=>frames.push(f),update:s=>updates.push(s)}});
- return {root,element,panels,links,fields,weights,swatches,caption,selection,frames,updates,controller,rafs,seek(value,reduced=false,immediate=false){p=value;controller.updateScroll({reduced,immediate});},low(value){low=value;controller.updateScroll();},tick(dt=16){time+=dt;const callbacks=[...rafs.values()];rafs.clear();callbacks.forEach(fn=>fn(time));},visibility(hidden){document.hidden=hidden;document.dispatchEvent(new Event('visibilitychange'));}};
+ return {root,element,panels,links,fields,weights,swatches,caption,selection,frames,updates,controller,rafs,previous,next,chapterSelect,focus(node){document.activeElement=node;},active(){return document.activeElement;},seek(value,reduced=false,immediate=false){p=value;controller.updateScroll({reduced,immediate});},low(value){low=value;controller.updateScroll();},tick(dt=16){time+=dt;const callbacks=[...rafs.values()];rafs.clear();callbacks.forEach(fn=>fn(time));},visibility(hidden){document.hidden=hidden;document.dispatchEvent(new Event('visibilitychange'));}};
 }
 test('eight-waypoint geometry is finite and the pure phase follows chapter centers',()=>{
  for(let i=0;i<8;i++) {const result=storyPhaseForSteps(rects(PHASES.map((_,j)=>j*1120-i*1120)),800);assert.equal(result.phase,PHASES[i]);assert.equal(result.progress,i/7);}
@@ -124,5 +126,30 @@ test('logical phase callback fires once after a filtered boundary crossing witho
  for(let i=0;i<80&&v.rafs.size;i++)v.tick(16);
  assert.equal(v.root.dataset.storyPhase,'criteria');assert.deepEqual(phases,['criteria']);
  v.controller.update();v.seek(.37);assert.deepEqual(phases,['criteria'],'repeated information renders do not refresh navigation forever');
+ v.controller.destroy();
+});
+
+
+test('the compact dock owns native edge states and actual neighboring chapter names without legacy links',()=>{
+ const v=fixture({nav:true,legacyLinks:false});
+ assert.equal(v.previous.disabled,true);assert.equal(v.next.disabled,false);assert.equal(v.previous.getAttribute('aria-label'),'이전 장면 없음');assert.equal(v.next.getAttribute('aria-label'),'다음 장면: 가격');
+ v.seek(3/7);assert.equal(v.previous.disabled,false);assert.equal(v.next.disabled,false);assert.equal(v.previous.getAttribute('aria-label'),'이전 장면: 조건');assert.equal(v.next.getAttribute('aria-label'),'다음 장면: 장소 비교');assert.equal(v.chapterSelect.value,'criteria');
+ v.focus(v.next);v.seek(1);assert.equal(v.next.disabled,true);assert.equal(v.next.getAttribute('aria-label'),'다음 장면 없음');assert.equal(v.previous.getAttribute('aria-label'),'이전 장면: 근거');assert.equal(v.active(),v.chapterSelect,'a newly disabled focused edge button keeps keyboard focus on the usable selector');
+ v.controller.destroy();assert.equal(v.previous.disabled,true);assert.equal(v.next.disabled,true);assert.equal(v.previous.getAttribute('aria-label'),null);assert.equal(v.next.getAttribute('aria-label'),null);
+});
+
+
+test('enhanced reading panels are keyboard scrollable and original tabindex returns on destroy',()=>{
+ const v=fixture();assert.ok(v.panels.every(p=>p.tabIndex===0));
+ v.low(true);assert.ok(v.panels.every(p=>p.tabIndex===-1));v.low(false);assert.ok(v.panels.every(p=>p.tabIndex===0));
+ v.controller.destroy();assert.ok(v.panels.every(p=>p.tabIndex===-1&&p.getAttribute('tabindex')===null));
+});
+
+test('incoming panel resets stale inner scroll before its first visible frame, not at logical phase change',()=>{
+ const v=fixture(),boundary=2.5/7,panel=v.panels[3];let storedTop=0;
+ Object.defineProperty(panel,'scrollTop',{get(){return panel.hidden?0:storedTop;},set(value){if(!panel.hidden)storedTop=value;}});
+ v.seek(3/7);panel.scrollTop=200;v.seek(2/7);
+ v.seek(boundary+.005);assert.equal(v.root.dataset.storyPhase,'conditions');assert.equal(panel.hidden,false);assert.equal(panel.scrollTop,0);
+ panel.scrollTop=45;v.seek(boundary+.007);assert.equal(v.root.dataset.storyPhase,'criteria');assert.equal(panel.scrollTop,45);
  v.controller.destroy();
 });

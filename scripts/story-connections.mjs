@@ -20,6 +20,7 @@ export function mountStoryConnections({root,owner}){
   const layer=root?.querySelector('#story-connections');
   const stage=root?.querySelector('#story-stage');
   const city=root?.querySelector('#story-city');
+  const reading=root?.querySelector('.story-panels');
   if(!layer||!stage||!city)return{setSnapshot(){},update(){},destroy(){}};
   const doc=root.ownerDocument;
   const links=[...root.querySelectorAll('[data-film-anchor]')].map(target=>{
@@ -40,7 +41,7 @@ export function mountStoryConnections({root,owner}){
     const active=root.dataset.storyEnhanced==='true'&&snapshot&&!doc.defaultView.matchMedia('(prefers-reduced-motion: reduce)').matches;
     layer.style.display=active?'':'none';
     if(!active)return;
-    const box=stage.getBoundingClientRect(),art=city.getBoundingClientRect();
+    const box=stage.getBoundingClientRect(),art=city.getBoundingClientRect(),clip=reading?.getBoundingClientRect();
     if(!box.width||!box.height){layer.style.display='none';return;}
     layer.setAttribute('viewBox',`0 0 ${box.width} ${box.height}`);
     const candidates=links.filter(link=>!link.panel.hidden&&+link.panel.style.opacity>0);
@@ -61,6 +62,7 @@ export function mountStoryConnections({root,owner}){
       const end=side?{x:paper.right-box.left+5,y:rect.top+rect.height/2-box.top}:{x:rect.left+rect.width/2-box.left,y:(paper?.top??rect.top)-box.top-5};
       const start={x:source.x-box.left,y:source.y-box.top};
       if(start.x<0||start.x>box.width||start.y<0||start.y>box.height||end.y<0||end.y>box.height)continue;
+      if(clip&&!isCovered({x:end.x+box.left,y:end.y+box.top},[clip]))continue;
       const number=Number(target.dataset.filmLinkBeat||0);
       const beat=number?snapshot.beats[panel.dataset.storyPanel][number-1]:1;
       const alpha=clamp(+panel.style.opacity)*clamp(beat);
@@ -75,5 +77,6 @@ export function mountStoryConnections({root,owner}){
     }
   }
   const unsubscribe=owner?.onPaint?.(update);
-  return{setSnapshot(next){snapshot=next;},update,destroy(){destroyed=true;unsubscribe?.();for(const{group}of links)group.remove();layer.style.display='none';}};
+  stage.addEventListener?.('scroll',update,{capture:true,passive:true});
+  return{setSnapshot(next){snapshot=next;},update,destroy(){destroyed=true;unsubscribe?.();stage.removeEventListener?.('scroll',update,true);for(const{group}of links)group.remove();layer.style.display='none';}};
 }

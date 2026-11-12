@@ -3,6 +3,7 @@ import { PALETTES } from './city.mjs';
 import { mountScene3D } from './scene3d.mjs';
 import { mountMotion } from './motion.mjs';
 import { mountStory } from './story.mjs';
+import { PHASES } from './story-timeline.mjs';
 
 const $ = selector => document.querySelector(selector);
 const keys = ['slope', 'elevation', 'age'];
@@ -65,6 +66,17 @@ demoDialog.addEventListener('click', event => {
 document.addEventListener('click', event => {
   const opener = event.target.closest('[data-open-demo]');
   if (opener) { event.preventDefault(); openDemo(opener); return; }
+  const direction=event.target.closest('[data-story-prev],[data-story-next]');
+  if(direction){
+    if(direction.disabled)return;
+    const index=PHASES.indexOf($('#platform').dataset.storyPhase);
+    const target=index>=0?PHASES[index+(direction.matches('[data-story-prev]')?-1:1)]:null;
+    if(target&&scrollFilmTo('#story-'+target,'smooth')){
+      event.preventDefault();
+      history.pushState(null,'','#story-'+target);
+    }
+    return;
+  }
   const anchor = event.target.closest('a[href^="#story-"]');
   if (anchor && scrollFilmTo(anchor.hash)) {
     event.preventDefault();
@@ -304,7 +316,7 @@ $('#share-state').addEventListener('click', async () => {
 });
 $('#close-share').addEventListener('click', () => { $('#share-fallback').hidden = true; $('#share-state').focus(); });
 window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); story.destroy(); storyOwner.destroy(); cities.forEach(city => city.owner.destroy()); } });
-document.querySelectorAll('[data-needs-js]').forEach(control => { control.disabled = false; });
+document.querySelectorAll('[data-needs-js]:not([data-story-prev]):not([data-story-next])').forEach(control => { control.disabled = false; });
 render({syncInputs:true});
 document.body.classList.add('has-demo');
 document.documentElement.dataset.ready = 'true';

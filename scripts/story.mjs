@@ -40,12 +40,14 @@ export function mountStory({root,element,owner,onPhaseChange}) {
   const fields=all('[data-film-field]'),weights=all('[data-film-weight]');
   const priceBars=all('[data-film-price-bar]');
   const chapterSelect=root?.querySelector('#story-chapter-select'),position=root?.querySelector('#story-position');
+  const previousButton=root?.querySelector('[data-story-prev]'),nextButton=root?.querySelector('[data-story-next]');
+  const originalButtons=[previousButton,nextButton].filter(Boolean).map(button=>({button,disabled:button.disabled,label:button.getAttribute('aria-label')}));
   const legacyFields=all('[data-story-field]'),units=all('[data-story-unit]');
   const caption=root?.querySelector('#story-caption'),legend=root?.querySelector('#story-legend'),selection=root?.querySelector('#hero-selection');
   const originalRoot=Object.fromEntries(['storyPhase','storyEnhanced','filmProgress','filmTarget'].map(key=>[key,root?.dataset[key]]));
   const initialMode=element?.dataset.storyMode,captionOpacity=caption?.style.opacity;
   const originalFilmProgress=root?.style?.getPropertyValue?.('--film-progress')??'';
-  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
+  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),tabIndex:panel.tabIndex??-1,tabindex:panel.getAttribute('tabindex'),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
   const originalLinks=links.map(link=>({link,aria:link.getAttribute('aria-current')}));
   const viewport=root?.ownerDocument?.defaultView;
   const lowHeight=viewport?.matchMedia?.('(max-height: 620px)');
@@ -67,12 +69,27 @@ export function mountStory({root,element,owner,onPhaseChange}) {
     if(element)element.dataset.storyMode=MODES[phase];
     for(const panel of panels){
       const index=PHASES.indexOf(panel.dataset.storyPanel),alpha=enhanced?timeline.opacities[index]??0:1;
+      if(panel.hidden&&alpha>0){
+        panel.style.opacity='0';panel.hidden=false;panel.scrollTop=0;
+      }
+      panel.tabIndex=enhanced?0:-1;
       panel.style.opacity=String(alpha);panel.hidden=alpha===0;
       panel.setAttribute('aria-hidden',String(enhanced&&panel.dataset.storyPanel!==phase));
       panel.inert=enhanced&&panel.dataset.storyPanel!==phase;
       snapshot.beats[panel.dataset.storyPanel]?.forEach((beat,i)=>setBeat(panel,'--beat-'+(i+1),String(beat)));
     }
     if(chapterSelect)chapterSelect.value=phase;
+    const phaseIndex=PHASES.indexOf(phase),focused=document?.activeElement;
+    const labels=['발견','가격','조건','내 기준','장소 비교','가격 환산','근거','마무리'];
+    for(const[button,index,direction]of[[previousButton,phaseIndex-1,'이전'],[nextButton,phaseIndex+1,'다음']]){
+      if(!button)continue;
+      const target=PHASES[index];
+      const option=[...(chapterSelect?.options??[])].find(option=>option.value===target);
+      const name=(option?.label||option?.textContent||labels[index]||'').trim();
+      button.disabled=!target;
+      button.setAttribute('aria-label',target?`${direction} 장면: ${name}`:`${direction} 장면 없음`);
+      if(button.disabled&&focused===button)chapterSelect?.focus?.({preventScroll:true});
+    }
     if(position)position.textContent='스크롤로 이어 보기';
     for(const link of links){
       const target=link.dataset.storyLink||link.getAttribute('href')?.replace('#story-','');
@@ -149,7 +166,8 @@ export function mountStory({root,element,owner,onPhaseChange}) {
       if(root)for(const[key,value]of Object.entries(originalRoot)){if(value===undefined)delete root.dataset[key];else root.dataset[key]=value;}
       if(element){if(initialMode===undefined)delete element.dataset.storyMode;else element.dataset.storyMode=initialMode;}
       if(caption)caption.style.opacity=captionOpacity??'';
-      for(const{panel,hidden,inert,aria,opacity,beats}of originalPanels){panel.hidden=hidden;panel.inert=inert;panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});}
+      for(const{panel,hidden,inert,tabIndex,tabindex,aria,opacity,beats}of originalPanels){panel.hidden=hidden;panel.inert=inert;panel.tabIndex=tabIndex;if(tabindex===null)panel.removeAttribute('tabindex');else panel.setAttribute('tabindex',tabindex);panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});}
+      for(const{button,disabled,label}of originalButtons){button.disabled=disabled;if(label===null)button.removeAttribute('aria-label');else button.setAttribute('aria-label',label);}
       for(const{link,aria}of originalLinks){if(aria===null)link.removeAttribute('aria-current');else link.setAttribute('aria-current',aria);}
     },
   };

@@ -30,3 +30,18 @@ test('leaders stay out of the opaque reading scrim without moving their real ori
   assert.equal(window({x:NaN,y:300},{width:1440,height:928}),false);
   assert.equal(window({x:1,y:1},{width:0,height:0}),false);
 });
+
+test('scrolling a constrained reading area refreshes leaders and destroy removes its listener',()=>{
+ let reads=0,unsubscribed=0;
+ const rect={left:0,top:72,right:600,bottom:572,width:600,height:500};
+ const stage=Object.assign(new EventTarget(),{getBoundingClientRect:()=>rect});
+ const layer={style:{},setAttribute(){reads++;}};
+ const city={getBoundingClientRect:()=>rect};
+ const root={dataset:{storyEnhanced:'true'},ownerDocument:{defaultView:{matchMedia:()=>({matches:false})}},querySelector:s=>({'#story-connections':layer,'#story-stage':stage,'#story-city':city,'.story-panels':stage}[s]),querySelectorAll:()=>[]};
+ const controller=module.mountStoryConnections({root,owner:{projectAnchors:()=>[],onPaint:()=>()=>unsubscribed++}});
+ controller.setSnapshot({beats:{}});
+ stage.dispatchEvent(new Event('scroll'));
+ assert.equal(reads,1,'inner reading scroll updates projected endpoints without another camera paint');
+ controller.destroy();stage.dispatchEvent(new Event('scroll'));
+ assert.equal(reads,1);assert.equal(unsubscribed,1);assert.equal(layer.style.display,'none');
+});
