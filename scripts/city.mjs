@@ -42,9 +42,16 @@ export function mixColor(from, to, mix = 0) {
   return '#' + a.map((value, index) => Math.round(value + (b[index] - value) * amount).toString(16).padStart(2, '0')).join('');
 }
 
-export function colorFrameForTransition(building, buildings, { from = 'price', to = from, mix = 0 } = {}, weights) {
+export function colorFrameForTransition(building, buildings, { from = 'price', to = from, mix = 0, continuous = false } = {}, weights) {
   const amount = Number.isFinite(mix) ? Math.max(0, Math.min(1, mix)) : 0;
-  const a = colorFor(building, buildings, from, weights), b = colorFor(building, buildings, to, weights);
+  const color = mode => {
+    if (!continuous || mode !== 'score') return colorFor(building, buildings, mode, weights);
+    const value = score(building, weights);
+    if (!Number.isFinite(value)) return '#d9d6cf';
+    const position = Math.max(0, Math.min(4, value / 100 * 4)), index = Math.floor(position);
+    return mixColor(PALETTES.score[index], PALETTES.score[Math.min(4, index + 1)], position - index);
+  };
+  const a = color(from), b = color(to);
   const missingA = +(a === '#d9d6cf'), missingB = +(b === '#d9d6cf');
   return { color: mixColor(a, b, amount), missing: missingA + (missingB - missingA) * amount };
 }
@@ -177,9 +184,11 @@ export function mountCity(container, { buildings = BUILDINGS, onSelect, interact
         const index = state.saved.indexOf(building.id);
         node.classList.toggle('is-selected', selected);
         node.classList.toggle('is-saved', index !== -1);
-        node.querySelector('.building-outline').style.display = selected ? '' : 'none';
+        const highlighted = state.highlightIds?.includes(building.id);
+        node.classList.toggle('is-highlighted', Boolean(highlighted));
+        node.querySelector('.building-outline').style.display = selected || highlighted ? '' : 'none';
         const marker = node.querySelector('.building-marker');
-        marker.style.display = index !== -1 || selected ? '' : 'none';
+        marker.style.display = index !== -1 || selected || highlighted ? '' : 'none';
         marker.querySelector('text').textContent = building.id.toUpperCase();
       }
     },

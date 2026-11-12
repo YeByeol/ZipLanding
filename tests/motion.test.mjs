@@ -67,6 +67,7 @@ test('motion batches events, stays idle, honors reduced motion and cleans up', a
   const document = Object.assign(new EventTarget(), {
     body: { classList }, hidden: false,
     documentElement: { scrollHeight: 2400 },
+    getElementById: () => null,
     querySelectorAll: () => [target],
   });
   globalThis.window = window;

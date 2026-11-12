@@ -1,3 +1,4 @@
+import { BUILDINGS } from './demo.mjs';
 import { PHASES, storyTimeline } from './story-timeline.mjs';
 export const DEFAULT_VIEW = Object.freeze({ yaw: .72, pitch: .68 });
 export const clampProgress = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
@@ -46,15 +47,21 @@ export function clampPresentation(frame = {}) {
   };
 }
 
-export function presentationForProgress(progress, building, { reduced = false } = {}) {
+export function presentationForProgress(progress, building = BUILDINGS[0], { reduced = false } = {}) {
   const center = { x: 0, y: .28, z: 0 };
   const valid = building && [building.x, building.y, building.height].every(Number.isFinite) && building.height >= 0;
   const selected = valid ? { ...buildingPosition(building), y: building.height / 78 + .14 } : center;
+  const evidence = BUILDINGS.find(item=>item.id==='x');
+  const unknown = {...buildingPosition(evidence),y:evidence.height/78+.14};
   const frames = [
-    { yaw: .72, pitch: .68, zoom: 1, target: center },
-    { yaw: .62, pitch: .80, zoom: 3.2, target: selected },
-    { yaw: .72, pitch: .76, zoom: 1.05, target: center },
-    { yaw: .56, pitch: .92, zoom: 1.05, target: center },
+    {yaw:.72,pitch:.68,zoom:1.05,target:center},
+    {yaw:.68,pitch:.70,zoom:1.2,target:selected},
+    {yaw:.62,pitch:.80,zoom:2.6,target:selected},
+    {yaw:.72,pitch:.76,zoom:1.05,target:center},
+    {yaw:.62,pitch:.72,zoom:1,target:center},
+    {yaw:.56,pitch:.92,zoom:1.05,target:center},
+    {yaw:.62,pitch:.80,zoom:1.9,target:unknown},
+    {yaw:.72,pitch:.68,zoom:1.05,target:center},
   ];
   const timeline = storyTimeline(reduced ? 0 : progress);
   const from = frames[PHASES.indexOf(timeline.from)], to = frames[PHASES.indexOf(timeline.to)];

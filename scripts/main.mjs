@@ -16,6 +16,61 @@ const format = (value, digits = 0) => Number.isFinite(value) ? value.toLocaleStr
 const placeName = building => `장소 ${building.id.toUpperCase()}`;
 const getBuilding = id => BUILDINGS.find(building => building.id === id);
 const selectedBuilding = () => getBuilding(state.selected);
+const demoDialog = $('#demo-dialog');
+const demoBody = demoDialog.querySelector('.demo-dialog-body');
+let filmPosition, demoOpener;
+
+function scrollDemoTo(target, behavior = 'smooth') {
+  if (!target || !demoDialog.contains(target)) return;
+  const top = target.getBoundingClientRect().top - demoBody.getBoundingClientRect().top + demoBody.scrollTop - 20;
+  demoBody.scrollTo({ top, behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : behavior });
+}
+
+function openDemo(opener, target = $('#experience')) {
+  if (demoDialog.open) return;
+  filmPosition = { x: window.scrollX, y: window.scrollY };
+  demoOpener = opener;
+  demoDialog.showModal();
+  document.body.classList.add('demo-open');
+  $('#close-demo').focus({ preventScroll: true });
+  scrollDemoTo(target, 'instant');
+  window.dispatchEvent(new Event('resize'));
+}
+
+function scrollFilmTo(hash, behavior = 'smooth') {
+  if ($('#platform').dataset.storyEnhanced !== 'true') return false;
+  const phase = hash.startsWith('#story-') ? hash.slice(7) : '';
+  const step = [...document.querySelectorAll('[data-story-step]')].find(node => node.dataset.storyStep === phase);
+  if (!step) return false;
+  window.scrollTo({ top: window.scrollY + step.getBoundingClientRect().top,
+    behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : behavior });
+  return true;
+}
+
+$('#close-demo').addEventListener('click', () => demoDialog.close());
+demoDialog.addEventListener('close', () => {
+  document.body.classList.remove('demo-open');
+  if (filmPosition) window.scrollTo({ left: filmPosition.x, top: filmPosition.y, behavior: 'instant' });
+  if (demoOpener?.isConnected) demoOpener.focus({ preventScroll: true });
+  filmPosition = demoOpener = undefined;
+});
+demoDialog.addEventListener('click', event => {
+  const anchor = event.target.closest('a[href^="#"]');
+  if (anchor) {
+    const target = document.getElementById(anchor.hash.slice(1));
+    if (target && demoDialog.contains(target)) { event.preventDefault(); scrollDemoTo(target); }
+  }
+});
+document.addEventListener('click', event => {
+  const opener = event.target.closest('[data-open-demo]');
+  if (opener) { event.preventDefault(); openDemo(opener); return; }
+  const anchor = event.target.closest('a[href^="#story-"]');
+  if (anchor && scrollFilmTo(anchor.hash)) {
+    event.preventDefault();
+    history.pushState(null, '', anchor.hash);
+  }
+});
+window.addEventListener('hashchange', () => scrollFilmTo(location.hash));
 
 function toast(message) {
   clearTimeout(toastTimer);
@@ -225,7 +280,7 @@ document.addEventListener('click', event => {
 });
 $('#save-selected').addEventListener('click', () => {
   if (state.saved.includes(state.selected)) return;
-  if (state.saved.length >= 3) { toast('세 곳까지 비교할 수 있습니다. 담은 장소 하나를 먼저 빼주세요.'); $('#comparison').scrollIntoView({ behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : 'smooth' }); return; }
+  if (state.saved.length >= 3) { toast('세 곳까지 비교할 수 있습니다. 담은 장소 하나를 먼저 빼주세요.'); scrollDemoTo($('#comparison')); return; }
   state.saved.push(state.selected); render(); toast(`${placeName(selectedBuilding())}를 비교에 담았습니다.`);
 });
 $('#reset-weights').addEventListener('click', () => { state.weights = { slope:50, elevation:50, age:50 }; render({syncInputs:true}); toast('모든 조건을 같은 중요도로 맞췄습니다.'); });
@@ -245,3 +300,5 @@ document.querySelectorAll('[data-needs-js]').forEach(control => { control.disabl
 render({syncInputs:true});
 document.body.classList.add('has-demo');
 document.documentElement.dataset.ready = 'true';
+if (['#experience', '#comparison'].includes(location.hash)) openDemo(null, document.getElementById(location.hash.slice(1)));
+else scrollFilmTo(location.hash, 'instant');

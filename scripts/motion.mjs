@@ -15,8 +15,11 @@ export function mountMotion({ scenes = [], header, progress, onUpdate }) {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
   const previous = new Map();
   const navigation = [...(header?.querySelectorAll('nav a[href^="#"]') ?? [])]
-    .map(link => ({ link, section: document.getElementById(link.getAttribute('href').slice(1)) }))
+    .map(link => ({ link, section: document.getElementById(link.getAttribute('href').slice(1)),
+      phase: link.getAttribute('href').startsWith('#story-') ? link.getAttribute('href').slice(7) : null }))
     .filter(item => item.section);
+  const filmRoot = document.getElementById('platform');
+  const filmPhases = [...(filmRoot?.querySelectorAll?.('[data-story-step]') ?? [])].map(step => step.dataset.storyStep);
   const hadReadyClass = document.body.classList.contains('motion-ready');
   let destroyed = false;
   let frame = null;
@@ -32,9 +35,14 @@ export function mountMotion({ scenes = [], header, progress, onUpdate }) {
     frame = null;
     if (destroyed || document.hidden) return;
     const viewport = window.innerHeight;
+    onUpdate?.({ reduced });
     header?.classList.toggle('is-scrolled', window.scrollY > 16);
-    let active = navigation[0];
-    for (const item of navigation) if (item.section.getBoundingClientRect().top <= viewport * 0.35) active = item;
+    let active;
+    for (const item of navigation) {
+      if (item.phase && filmRoot?.dataset.storyEnhanced === 'true') {
+        if (filmPhases.indexOf(item.phase) <= filmPhases.indexOf(filmRoot.dataset.storyPhase)) active = item;
+      } else if (item.section.getBoundingClientRect().top <= viewport * 0.35) active = item;
+    }
     for (const item of navigation) {
       if (item === active) item.link.setAttribute('aria-current', 'location');
       else item.link.removeAttribute('aria-current');
@@ -44,7 +52,6 @@ export function mountMotion({ scenes = [], header, progress, onUpdate }) {
       progress.style.transform = `scaleX(${amount})`;
       progress.setAttribute('aria-valuenow', String(Math.round(amount * 100)));
     }
-    onUpdate?.({ reduced });
     if (reduced) return;
     for (const { element, owner } of scenes) {
       const rect = element.getBoundingClientRect();

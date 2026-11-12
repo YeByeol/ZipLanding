@@ -174,3 +174,33 @@ v2.0 공개 배포 확인:
 - Taste 소스 **0 FAIL/0 WARN**, 실제1440·768·390 검사 **0 FAIL/3 WARN**. `still-page` 규칙만 사용자 요청의 읽기 정지·반복 등장 제거를 지키기 위해 명시적으로 허용했다. 글자 크기 수는 실제 수치/UI 역할을 유지하고, 실사 사진·별도 영상은 가상 도시 자체3D를 중심 미디어로 쓰므로 추가하지 않았다. covered-text·pinned-over-picture 문제는 실제 배치를 수정해 해소했다.
 
 검증은 브라우저 viewport·실제 WebGL draw·CDP 입력 범위다. 실물 휴대폰의 GPU·배터리·FPS나 의학적인 눈 피로 개선은 측정하지 않았다. 가상 예시와 서비스 개발 상태는 그대로 명시한다.
+
+## v2.2 본문 전체를 여덟 장의 스크롤 필름으로
+
+v2.1은 경계 안정화의 내부 checkpoint였으며 공개하지 않았다. 상단4장 뒤에 직접 조작/정적 설명이 이어지던 구성을 없앴다. 최종 설계는 `superpowers/specs/2026-11-12-zip-entire-scroll-film.md`다.
+
+본문 전체는 같은 도시를 따라 **발견→가격표→조건→중요도 자동 시연→세 장소 비교→가격 환산→자료의 한계→마무리**로 이어진다. 가격 연결선과 숫자 조립, 조건 층, 중요도 막대/계산 점수/도시 색, 카드 정렬/행 강조, 공식 항 조립, X의 결측 빗금/출처 연결선, Z의 선그리기가 각 장의 스크롤 진행값을 따른다. 일반적인 섹션 등장 효과만 더한 구성이 아니다. 직접 조작하지 않아도 이야기가 완결된다.
+
+기존 중요도·선택·담기·비교·공유는 별도 native dialog에서 선택적으로 연다. 닫기/ESC는 보던 film 위치와 opener focus를 복원한다. 내부 앵커는 dialog만 스크롤하고 공유 링크의#experience/#comparison은 해당 체험을 연다. 시연은 방문자의 체험 state/query와 독립적이다.
+
+최종 수치와 동작:
+
+- 시연 중요도 균등→80/10/10에서 A/B/C는 반올림37/45/52→80/74/65점. 금액은 바뀌지 않는다. 막대·숫자·색이 같은 실제 계산 snapshot을 사용한다.
+- 자동 점수의5단계 색 경계는 story 전용 연속 RGB ramp로 보간한다. 실제 체험의 기존5구간 의미는 유지한다. 아주 작은 왕복에서 색이 단계별로 튀는 재현도 RED→GREEN으로 고쳤다.
+- A의 월 환산 단가1.70만/㎡, 연5%가정·관리비 제외. 시연 기준 ±5점의 실제 비교 대상은K/V2곳(3.41/2.54만/㎡)이다.5개 미만이므로 퍼센트 평가를 하지 않는다. X의 세 조건과 점수는 모두 자료 없음이다.
+- 8장 모두 같은 canvas client/buffer 크기와 정확한 같은-task 렌더를 유지한다. 전환 구간과 각 장 안의 그래픽 동작 뒤에는 읽는 정지가 있다. noJS/낮은 높이는8개 일반 흐름·정적 그림·완성된 정보, reduced는 정지 camera·완성 그래픽과 before/after 문장으로 읽는다.
+
+최종 확인:
+
+- Node **42/42**, 전체 모듈 syntax, SVG 내보내기, diff 검사 통과. 독립 검토의 색 단계 불연속·균등 기준의 읽기 시점·fallback 앵커·초기 메뉴 current-location 문제를 수정했다. 제품 계산/URL/식별자/결측/수동 camera 회귀를 보존했다.
+- 실제 전체 궤적 **14/14**:8개 장의 실제 CSS 그래픽 변화, camera 정지 구간,7경계 jitter, 전진/역방향 같은 physical frame, 빠른 seek, 모든 숫자/막대와 snapshot 일치, canvas 크기/ID 유지, 방문자 state/query 불변을 확인했다.
+- 실제 선택 체험 **15/15**: dialog open/focus, keyboard slider, X 선택, narrative 독립, 빈 비교/focus, 내부 anchor, 공유 실패 대안/focus, close/ESC의 동일 film frame 복원, 재열기 state 보존, 공유 URL 복원과 native focus containment를 확인했다.
+- 별도의 실제 fallback/camera **53개 확인**: noJS1000/620의8장과 실제 fragment/메뉴 이동,1000↔620 복귀, reduced, fresh vendor 차단 SVG 색/막대, score threshold 연속성, 결측 빗금, 실제 WEBGL_lose_context의 최신 frame, 선택 체험 camera8개/수동 우선/실제 hover. 최종 browser errors0.
+- 실제 WebGL draw 계측: 시각 frame이 바뀐 **38개 RAF callback 모두 같은 callback 안에서 GPU draw**, 정지 후300ms story draw0. 이 계측은 FPS 벤치마크가 아니다.
+- native smooth scroll로 전체8장을32개 동작 지점과 역방향3개 링크로 녹화했다(약20초 QA 영상). 중요도37/45/52→중간58/59/59→80/74/65, 후반 공식/근거/Z 동작까지 확인했다. 페이지는 영상 파일을 재생하는 방식이 아니라 실제3D/DOM을 스크롤로 조합한다.
+- 1440×900·768×1024·390×844·375×667·320×640에서8장, 총40개 hold와 중간 동작10개, dialog10개 화면을 직접 확인했다. 장별 도시 rect 동일, 제목/그래픽/범례/조작/가상예시 고지 분리, 문서·dialog 가로 overflow0, close 표시를 확인했다. 이후 불필요한 정적 구분선만 정리했다.
+- 실제 CDP touch: 본문 swipe는 window scroll100→353. dialog의 세로 swipe는 내부 scroll260→507, 가로 swipe는 내부 scroll260 고정/yaw.72→−.2097이며 선택A 유지. 두 경우 window353 고정, 닫은 뒤에도353으로 복귀했다.
+- axe: 초기 film **39 passes/0 violations/0 incomplete**, criteria/mobile film **39/0/1**, dialog desktop/mobile **27/0/1**. 남은 incomplete는 겹친 그래픽·canvas·native dialog에서 자동으로 배경을 정하지 못하는 대비 판정이다. 실제 완성 상태의 불투명 paper/ink와 night/white 표면 및 화면을 확인했다. 자동 검사만으로 모든 접근성을 보증하지 않는다.
+- Taste 소스 **0 FAIL/0 WARN**, 실제1440/768/390 **0 FAIL/3 WARN**. `few-pictures`만 자체3D/데이터 그래픽을 중심 미디어로 쓰는 명시적 예외다. 별도 영상 부재는 실제 조작 가능한3D로, pinned-over-picture는 canvas 위의 불투명 데이터 표면으로, still-page13개 측정은 실제8장 전체 궤적/중간 동작 확인과 읽기 정지 설계로 판단했다. 장식용 사진/상시 루프를 추가하지 않았다.
+
+실물 휴대폰 GPU·배터리·FPS나 의학적인 눈 피로 개선은 측정하지 않았다. 가상 데이터·개발 중 서비스라는 고지를 유지한다.

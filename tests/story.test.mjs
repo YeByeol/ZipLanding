@@ -1,189 +1,73 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { storyPhaseForSteps, mountStory } from '../scripts/story.mjs';
-import { BUILDINGS, scoreBuilding, comparisonFor } from '../scripts/demo.mjs';
-import { PALETTES } from '../scripts/city.mjs';
-
-const positions = tops => tops.map(top => ({ top }));
-
-test('story phases follow the midline forward and backward, including boundaries', () => {
-  for (const [tops, expected] of [
-    [[500, 1300, 2100, 2900], 'price'], [[400, 1200, 2000, 2800], 'price'],
-    [[-400, 400, 1200, 2000], 'conditions'], [[-1200, -400, 400, 1200], 'criteria'],
-    [[-2000, -1200, -400, 400], 'value'], [[-1200, -400, 400, 1200], 'criteria'],
-    [[-400, 400, 1200, 2000], 'conditions'], [[400, 1200, 2000, 2800], 'price'],
-  ]) assert.equal(storyPhaseForSteps(positions(tops), 800).phase, expected);
-  assert.equal(storyPhaseForSteps(positions([0, 800, 1600, 2400]), 800).progress, 0);
-  assert.equal(storyPhaseForSteps(positions([-800, 0, 800, 1600]), 800).progress, 1 / 3);
-  assert.equal(storyPhaseForSteps(positions([-2800, -2000, -1200, -400]), 800).progress, 1);
-});
-
-test('story geometry rejects incomplete, non-finite or unordered steps and invalid viewports', () => {
-  for (const rects of [undefined, [], new Array(4), positions([0, 1, 2]), positions([0, 2, 1, 3]), positions([0, 0, 0, 0]), positions([0, NaN, 2, 3]), positions([0, Infinity, 2, 3])]) {
-    assert.deepEqual(storyPhaseForSteps(rects, 800), { phase: 'price', progress: 0 });
-  }
-  for (const viewport of [undefined, 0, -1, NaN, Infinity]) assert.deepEqual(storyPhaseForSteps(positions([0, 800, 1600, 2400]), viewport), { phase: 'price', progress: 0 });
-});
-
-function node(dataset = {}) {
-  const attributes = new Map();
-  return { dataset, style: {}, hidden: false, textContent: '',
-    setAttribute: (key, value) => attributes.set(key, String(value)),
-    getAttribute: key => attributes.get(key) ?? null,
-    removeAttribute: key => attributes.delete(key),
-  };
+import {storyPhaseForSteps,mountStory} from '../scripts/story.mjs';
+import {PHASES} from '../scripts/story-timeline.mjs';
+import {filmSnapshot} from '../scripts/film-model.mjs';
+const rects=tops=>tops.map(top=>({top}));
+function node(dataset={}) {
+ const attrs=new Map(),vars=new Map();
+ return {dataset,style:{setProperty:(k,v)=>vars.set(k,v),getPropertyValue:k=>vars.get(k)??'',removeProperty:k=>vars.delete(k)},hidden:false,textContent:'',setAttribute:(k,v)=>attrs.set(k,String(v)),getAttribute:k=>attrs.get(k)??null,removeAttribute:k=>attrs.delete(k)};
 }
-
 function fixture() {
-  let tops = [0, 800, 1600, 2400];
-  let lowHeight = false;
-  let bounds = { top: 0, bottom: 3600 };
-  const phases = ['price', 'conditions', 'criteria', 'value'];
-  const steps = phases.map((phase, index) => ({ ...node({ storyStep: phase }), getBoundingClientRect: () => ({ top: tops[index] }) }));
-  const panels = phases.map(phase => node({ storyPanel: phase }));
-  const links = phases.map(phase => node({ storyLink: phase }));
-  const fields = ['place', 'id', 'rent', 'deposit', 'area', 'slope', 'elevation', 'year', 'score', 'peer-count', 'unit', 'peers', 'score'].map(field => node({ storyField: field }));
-  const units = ['slope', 'elevation', 'year', 'score', 'score'].map(key => node({ storyUnit: key }));
-  const swatches = Array.from({ length: 5 }, () => node());
-  const caption = node(), selection = node(), legend = { ...node(), querySelectorAll: () => swatches };
-  const root = { ...node(), getBoundingClientRect: () => bounds, ownerDocument: { defaultView: { innerHeight: 800, matchMedia: query => ({ get matches() { return query === '(max-height: 620px)' && lowHeight; } }) } },
-    querySelectorAll: selector => ({ '[data-story-step]': steps, '[data-story-panel]': panels, '[data-story-link]': links, '[data-story-field]': fields, '[data-story-unit]': units }[selector] ?? []),
-    querySelector: selector => ({ '#story-caption': caption, '#story-legend': legend, '#hero-selection': selection }[selector]),
-  };
-  const element = node(), sceneStates = [], progress = [];
-  const controller = mountStory({ root, element, owner: { update: state => sceneStates.push(state), setPresentation: value => progress.push(value) } });
-  return { controller, root, element, panels, links, fields, units, swatches, caption, selection, sceneStates, progress, setTops: value => { tops = value; }, setBounds: value => { bounds = value; }, setLowHeight: value => { lowHeight = value; } };
+ let p=0,low=false;
+ const steps=PHASES.map((phase,i)=>({...node({storyStep:phase}),getBoundingClientRect:()=>({top:i*1120-p*7840})}));
+ const panels=PHASES.map(phase=>node({storyPanel:phase})),links=PHASES.map(phase=>node({storyLink:phase}));
+ const names=Object.keys(filmSnapshot(0).fields),fields=names.map(name=>node({filmField:name}));
+ const weights=['slope','elevation','age'].map(name=>node({filmWeight:name}));
+ const swatches=Array.from({length:5},()=>node()),caption=node(),selection=node();
+ const root={...node(),ownerDocument:{defaultView:{innerHeight:800,matchMedia:q=>({get matches(){return q==='(max-height: 620px)'&&low;}})}},querySelectorAll:s=>({'[data-story-step]':steps,'[data-story-panel]':panels,'[data-story-link]':links,'[data-film-field]':fields,'[data-film-weight]':weights}[s]??[]),querySelector:s=>({'#story-caption':caption,'#story-legend':{querySelectorAll:()=>swatches},'#hero-selection':selection}[s])};
+ const element=node(),frames=[],updates=[];
+ const controller=mountStory({root,element,owner:{setPresentation:f=>frames.push(f),update:s=>updates.push(s)}});
+ return {root,element,panels,links,fields,weights,swatches,caption,selection,frames,updates,controller,seek(value,reduced=false){p=value;controller.updateScroll({reduced});},low(value){low=value;controller.updateScroll();}};
 }
-
-test('story controller changes only its view, shares computed fields, and suppresses idle updates', () => {
-  const view = fixture();
-  const state = Object.freeze({ mode: 'value', selected: 'b', saved: Object.freeze([]), weights: Object.freeze({ slope: 50, elevation: 50, age: 50 }) });
-  const original = JSON.stringify(state);
-  view.controller.update(state);
-  view.controller.updateScroll({ reduced: false });
-  assert.equal(view.sceneStates.at(-1).mode, 'price');
-  assert.equal(view.sceneStates.at(-1).selected, 'b');
-  assert.deepEqual(view.sceneStates.at(-1).saved, []);
-  const building = BUILDINGS.find(item => item.id === 'b');
-  assert.equal(view.fields.find(item => item.dataset.storyField === 'rent').textContent, String(building.rent));
-  assert.equal(view.fields.find(item => item.dataset.storyField === 'year').textContent, String(building.year));
-  const score = Math.round(scoreBuilding(building, state.weights).score).toString();
-  assert.deepEqual(view.fields.filter(item => item.dataset.storyField === 'score').map(item => item.textContent), [score, score]);
-  assert.equal(view.fields.find(item => item.dataset.storyField === 'peer-count').textContent, String(comparisonFor(building, state.weights).count));
-  const calls = view.sceneStates.length, cameras = view.progress.length;
-  view.controller.update(state); view.controller.updateScroll({ reduced: false });
-  assert.equal(view.sceneStates.length, calls);
-  assert.equal(view.progress.length, cameras);
-  for (const [tops, phase, mode] of [
-    [[-720, 80, 880, 1680], 'conditions', 'terrain'], [[-1560, -760, 40, 840], 'criteria', 'score'],
-    [[-2400, -1600, -800, 0], 'value', 'price'], [[-720, 80, 880, 1680], 'conditions', 'terrain'],
-  ]) {
-    view.setTops(tops); view.controller.updateScroll({ reduced: false });
-    assert.equal(view.root.dataset.storyPhase, phase);
-    assert.equal(view.element.dataset.storyMode, mode);
-    assert.equal(view.sceneStates.length, calls, 'logical chapters never write physical renderer state');
-    assert.equal(view.panels.filter(panel => !panel.hidden)[0].dataset.storyPanel, phase);
-    assert.equal(view.links.find(link => link.getAttribute('aria-current') === 'step').dataset.storyLink, phase);
-    assert.deepEqual(view.swatches.map(item => item.style.backgroundColor), PALETTES[mode]);
-  }
-  assert.equal(JSON.stringify(state), original, 'scroll cannot mutate shared mode, weights, selection or saved places');
-  assert.match(view.selection.textContent, /장소 B/);
-  view.controller.destroy();
-  const finalCalls = view.sceneStates.length;
-  view.controller.update(state); view.controller.updateScroll({ reduced: false });
-  assert.equal(view.sceneStates.length, finalCalls);
+test('eight-waypoint geometry is finite and the pure phase follows chapter centers',()=>{
+ for(let i=0;i<8;i++) {const result=storyPhaseForSteps(rects(PHASES.map((_,j)=>j*1120-i*1120)),800);assert.equal(result.phase,PHASES[i]);assert.equal(result.progress,i/7);}
+ for(const tops of [undefined,[],new Array(8),rects([0,1,2]),rects([0,1,2,3,4,5,6,NaN]),rects([0,1,2,3,4,7,6,8])]) assert.deepEqual(storyPhaseForSteps(tops,800),{phase:'discover',progress:0});
+ for(const v of [0,-1,NaN,Infinity,undefined])assert.deepEqual(storyPhaseForSteps(rects(PHASES.map((_,i)=>i)),v),{phase:'discover',progress:0});
+});
+test('film fields, bars and renderer share one snapshot while visitor data stays independent',()=>{
+ const v=fixture(); const visitor=Object.freeze({selected:'x',weights:Object.freeze({slope:0,elevation:100,age:0}),saved:Object.freeze([]),mode:'value'});const original=JSON.stringify(visitor);
+ v.controller.update(visitor);v.seek(3/7);
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='score-a').textContent,'80');
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='rent').textContent,'35');
+ assert.deepEqual(v.frames.at(-1).weights,{slope:80,elevation:10,age:10});
+ assert.equal(v.frames.at(-1).selected,'a');
+ assert.equal(v.weights[0].style.transform,'scaleX(0.8)');assert.equal(v.weights[0].getAttribute('aria-valuenow'),'80');
+ assert.ok(v.panels[3].style.getPropertyValue('--beat-3')==='1');
+ assert.equal(v.updates.length,0,'visitor state never enters the story renderer');
+ const frame=v.frames.at(-1),calls=v.frames.length;v.controller.update({selected:'b',weights:{slope:100,elevation:0,age:0},saved:['x']});v.seek(3/7);
+ assert.equal(v.frames.length,calls);assert.deepEqual(v.frames.at(-1),frame);assert.equal(JSON.stringify(visitor),original);
+});
+test('eight panel fades and beats rewind exactly and metadata alone has hysteresis',()=>{
+ const v=fixture(),boundary=2.5/7;
+ v.seek(boundary-.0175);assert.ok(+v.panels[2].style.opacity>0&&+v.panels[2].style.opacity<1);assert.equal(v.panels[2].hidden,false);
+ v.seek(boundary);assert.ok(v.panels.every(p=>p.hidden));assert.equal(v.caption.style.opacity,'0');
+ const phase=v.root.dataset.storyPhase;for(const p of [boundary+.001,boundary-.001,boundary+.002]){v.seek(p);assert.equal(v.root.dataset.storyPhase,phase);}
+ const p=boundary+.035+.02;v.seek(p);const frame=v.frames.at(-1),beats=v.panels[3].style.getPropertyValue('--beat-2');v.seek(1);v.seek(p);
+ assert.deepEqual(v.frames.at(-1),frame);assert.equal(v.panels[3].style.getPropertyValue('--beat-2'),beats);
+ assert.equal(v.links.find(l=>l.getAttribute('aria-current')==='step').dataset.storyLink,'criteria');
+});
+test('low height exposes completed eight chapters with final truthful demo and actively wide camera',()=>{
+ const v=fixture();v.seek(2/7);assert.equal(v.frames.at(-1).zoom,2.6);v.low(true);
+ assert.equal(v.root.dataset.storyEnhanced,'false');assert.ok(v.panels.every(p=>!p.hidden&&p.style.opacity==='1'&&p.getAttribute('aria-hidden')==='false'));
+ assert.ok(v.panels.every(p=>[1,2,3].every(i=>p.style.getPropertyValue('--beat-'+i)==='1')));assert.equal(v.frames.at(-1).zoom,1.05);
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='score-a').textContent,'80');assert.equal(v.fields.find(f=>f.dataset.filmField==='rent').textContent,'35');
+ v.low(false);assert.equal(v.frames.at(-1).zoom,2.6);assert.equal(v.panels.filter(p=>!p.hidden).length,1);
+ v.controller.destroy();assert.equal(v.root.dataset.storyEnhanced,undefined);assert.ok(v.panels.every(p=>!p.hidden));
+});
+test('reduced motion completes graphics, keeps one stable panel, missing X and stationary camera',()=>{
+ const v=fixture();v.seek(6/7,true);assert.equal(v.root.dataset.storyPhase,'evidence');assert.equal(v.panels.filter(p=>!p.hidden).length,1);assert.equal(v.frames.at(-1).zoom,1.05);
+ assert.ok(v.fields.filter(f=>f.dataset.filmField.startsWith('x-')).every(f=>f.textContent==='자료 없음'&&f.dataset.missing==='true'));
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='peer-count').textContent,'2');
+ assert.equal(v.frames.at(-1).colorBlend.from,'score');
+ const center=v.frames.at(-1).target;v.seek(1,true);assert.deepEqual(v.frames.at(-1).target,center);
+ v.controller.destroy();const calls=v.frames.length;v.seek(0);v.controller.update({});assert.equal(v.frames.length,calls);
 });
 
-test('reduced motion keeps current phase information and missing fields, with a stationary camera', () => {
-  const view = fixture();
-  view.controller.update({ mode: 'score', selected: 'x', saved: ['x'], weights: { slope: 50, elevation: 50, age: 50 } });
-  view.setTops([-1560, -760, 40, 840]);
-  view.controller.updateScroll({ reduced: true });
-  assert.equal(view.root.dataset.storyPhase, 'criteria');
-  assert.equal(view.progress.at(-1).colorBlend.from, 'score');
-  assert.equal(view.fields.find(item => item.dataset.storyField === 'score').textContent, '자료 없음');
-  assert.equal(view.fields.find(item => item.dataset.storyField === 'slope').textContent, '자료 없음');
-  assert.match(view.caption.textContent, /보라/);
-  assert.ok(view.fields.filter(field => ['slope', 'elevation', 'year', 'score'].includes(field.dataset.storyField)).every(field => field.dataset.missing === 'true'));
-  assert.ok(view.units.every(unit => unit.hidden), 'missing values hide all repeated numeric units');
-  assert.equal(view.progress.at(-1).zoom, 1);
-  view.setTops([-720, 80, 880, 1680]);
-  view.controller.updateScroll({ reduced: true });
-  assert.equal(view.root.dataset.storyPhase, 'conditions');
-  assert.equal(view.progress.at(-1).colorBlend.from, 'terrain');
-  assert.deepEqual(view.progress.at(-1).target, { x: 0, y: .28, z: 0 }, 'reduced motion keeps a wide pose while semantic colors change');
-  view.controller.update({ mode: 'score', selected: 'a', saved: ['a'], weights: { slope: 50, elevation: 50, age: 50 } });
-  assert.ok(view.fields.every(field => field.dataset.missing === 'false'));
-  assert.ok(view.units.every(unit => !unit.hidden), 'choosing valid values restores every numeric unit');
-});
-
-
-
-test('low height actively restores wide framing and reentry reapplies the current scroll frame', () => {
-  const view = fixture();
-  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
-  view.setTops([-720, 80, 880, 1680]); view.controller.updateScroll();
-  assert.equal(view.progress.at(-1).zoom, 3.2);
-  view.setLowHeight(true); view.controller.updateScroll();
-  assert.equal(view.root.dataset.storyEnhanced, 'false');
-  assert.ok(view.panels.every(panel => !panel.hidden && panel.style.opacity === '1' && panel.getAttribute('aria-hidden') === 'false'));
-  assert.equal(view.progress.at(-1).zoom, 1);
-  const count = view.progress.length;
-  view.controller.update({ selected: 'x', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
-  assert.equal(view.fields.find(field => field.dataset.storyField === 'score').textContent, '자료 없음');
-  assert.equal(view.progress.length, count, 'the wide frame stays idle while low height fields update');
-  view.setLowHeight(false); view.controller.updateScroll();
-  assert.equal(view.root.dataset.storyEnhanced, 'true');
-  assert.equal(view.panels.filter(panel => !panel.hidden).length, 1);
-  assert.equal(view.progress.at(-1).zoom, 3.2);
-  view.controller.destroy();
-  assert.equal(view.root.dataset.storyEnhanced, undefined);
-  assert.ok(view.panels.every(panel => !panel.hidden));
-});
-
-test('camera begins wide at first waypoint and retargets selected buildings at current scroll', () => {
-  const view = fixture();
-  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
-  view.controller.updateScroll();
-  assert.equal(view.progress.at(-1).zoom, 1);
-  view.setTops([-720, 80, 880, 1680]);
-  view.controller.updateScroll();
-  assert.equal(view.progress.at(-1).zoom, 3.2);
-  assert.ok(Math.abs(view.progress.at(-1).target.x + 2.975) < 1e-12);
-  view.controller.update({ selected: 'b', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
-  assert.ok(Math.abs(view.progress.at(-1).target.x + 1.845) < 1e-12);
-  view.setTops([0, 800, 1600, 2400]); view.controller.updateScroll();
-  assert.equal(view.progress.at(-1).zoom, 1);
-});
-
-test('twenty peers stay a three-place preview and retain an explicit remaining count', () => {
-  const view = fixture();
-  view.controller.update({ selected: 'b', saved: [], weights: { slope: 50, elevation: 50, age: 0 } });
-  const text = view.fields.find(field => field.dataset.storyField === 'peers').textContent;
-  assert.equal(view.fields.find(field => field.dataset.storyField === 'peer-count').textContent, '20');
-  assert.equal((text.match(/장소 /g) ?? []).length, 3);
-  assert.match(text, /외 17곳/);
-  assert.ok(text.length < 100);
-});
-
-
-test('panels fade through a quiet middle and jitter changes no logical metadata', () => {
-  const view = fixture();
-  view.controller.update({ selected: 'a', saved: [], weights: { slope: 50, elevation: 50, age: 50 } });
-  const seek = p => { view.setTops([0,800,1600,2400].map(top => top - p * 2400)); view.controller.updateScroll(); };
-  seek(1/6 - .03);
-  assert.ok(+view.panels[0].style.opacity > 0 && +view.panels[0].style.opacity < 1);
-  assert.equal(view.panels[0].hidden, false);
-  assert.equal(view.panels[1].hidden, true);
-  seek(1/6);
-  assert.ok(view.panels.every(panel => panel.hidden));
-  assert.equal(+view.caption.style.opacity, 0);
-  const phase = view.root.dataset.storyPhase;
-  for (const p of [1/6 + .001, 1/6 - .001, 1/6 + .002]) { seek(p); assert.equal(view.root.dataset.storyPhase, phase); }
-  seek(1/6 + .03);
-  assert.equal(view.panels[1].hidden, false);
-  assert.ok(+view.panels[1].style.opacity > 0 && +view.panels[1].style.opacity < 1);
-  const frame = view.progress.at(-1);
-  seek(1); seek(1/6 + .03);
-  assert.deepEqual(view.progress.at(-1), frame, 'reverse scroll uses the identical physical frame');
+test('automatic bars use exact snapshot weights even when rounded number text holds',()=>{
+ const v=fixture();const p=.409889;v.seek(p);
+ const before=v.fields.find(f=>f.dataset.filmField==='weight-slope').textContent;
+ v.seek(p+.0000001);
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='weight-slope').textContent,before,'tiny scroll keeps rounded readable numbers');
+ assert.equal(v.weights[0].style.transform,`scaleX(${filmSnapshot(p+.0000001).weights.slope/100})`,'graphic follows exact same weights as the city');
 });

@@ -110,8 +110,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
         unsettled = true;
       } else item.material.color.copy(item.targetColor);
       item.material.emissive.set(item.id === hovered ? '#113a32' : '#000000');
-      item.outline.visible = selected;
-      item.marker.material = selected ? item.selectedMarker : state.saved.includes(item.id) ? item.savedMarker : item.defaultMarker;
+      const highlighted = state.highlightIds?.includes(item.id);
+      item.outline.visible = selected || highlighted;
+      item.marker.material = selected ? item.selectedMarker : state.saved.includes(item.id) || highlighted ? item.savedMarker : item.defaultMarker;
     }
     positionCamera();
     try {
@@ -437,11 +438,21 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (destroyed || interactive || manual) return;
       const next = reduced ? presentationForProgress(0) : clampPresentation(frame);
       if (frame?.colorBlend) {
-        const { from, to, mix } = frame.colorBlend;
+        const { from, to, mix, continuous } = frame.colorBlend;
         if (Object.hasOwn(PALETTES, from) && Object.hasOwn(PALETTES, to)) {
-          state.colorBlend = { from, to, mix: clampProgress(mix) };
+          state.colorBlend = { from, to, mix: clampProgress(mix), continuous: continuous === true };
         }
       }
+      const ids = new Set(buildings.map(building => building.id));
+      if (ids.has(frame?.selected)) state.selected = frame.selected;
+      if (frame?.weights && typeof frame.weights === 'object') {
+        state.weights = Object.fromEntries(['slope','elevation','age'].map(key => {
+          const value = frame.weights[key];
+          return [key, Number.isFinite(value) ? Math.max(0, Math.min(100, value)) : state.weights?.[key] ?? 1];
+        }));
+      }
+      if (Array.isArray(frame?.highlightIds)) state.highlightIds = [...new Set(frame.highlightIds.filter(id => ids.has(id)))];
+      if (Array.isArray(frame?.saved)) state.saved = [...new Set(frame.saved.filter(id => ids.has(id)))].slice(0, 3);
       targetView = { yaw: next.yaw, pitch: next.pitch };
       targetCenter = { ...next.target };
       targetZoom = next.zoom;
