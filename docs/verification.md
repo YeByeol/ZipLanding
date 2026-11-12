@@ -381,3 +381,12 @@ v3.2 공개 배포 확인:
 - Taste direction split-stage, seed2101352179, retaining brand palette/type. The full-stage authored3D requirement takes priority over unrelated photographic/video quotas. The inspector's few-pictures/empty-screens/pinned-over-picture/no-footage findings describe its raster/DOM sampling of a continuous WebGL film and were explicitly allowed; they are not reported as repaired defects. Semantic purple is retained for scores. Neutral scrims protect reading over the city. With these documented exceptions, the final1440/768/390 inspection has no findings, no horizontal overflow, no over-two-line opening heading and no script errors. Source lint has0fail and one em-dash warning for the brand separator and explicit missing-value marks.
 - Visual review: the city and its reason-for-choice form the focal pair. Layouts now differ by information role. Internal craft assessment: design7.8/usability8/creativity7/content8, weighted7.7; this is a subjective local review, not an external award or user acceptance. Remaining bound: small phones devote most of dense proof scenes to readable data; actual hardware FPS and mobileSafari behavior were not measured.
 - Local evidence is ignored from Git/publication under qa/art-direction,qa/art-critic,qa/art-motion,qa/art-city. Deployment verification follows below.
+
+
+### v3.3 public deployment receipt
+
+- Source `b1261efdd594529d9d0b5baf01bce33bcba3fbae`; GitHub Actions [43332442991](https://github.com/YeByeol/ZipLanding/actions/runs/43332442991) completed successfully (build/tests/export/upload/deploy).
+- Public URL https://yebyeol.github.io/ZipLanding/ returned HTTP200 and exact local-byte equality for all31 deployed source/asset files.
+- Fresh public browser pass:24 holds, every chapter at1440×900,1440×860 and320×640. Copy/graphic/dock remain separate, no document or normal-panel overflow, controls at least44px, one header progress indicator, full-stage canvas and zero script errors. Low-height800×500 ordinary flow also passed.
+- Public native navigation10/10 passed, including demo-state preservation, keyboard boundary focus, closing-dialog Escape, reduced motion and mobile targets. Dedicated sessions closed.
+- Root visually inspected public desktopcomparison, mobilevalue and desktopclosing screenshots; final source matches the verified release. Receipt-only documentation does not trigger another deployment.
