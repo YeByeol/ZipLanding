@@ -300,3 +300,10 @@ v2.4 공개 배포 확인:
 내부 시각 재검토는 구도·타이포·정보 위계·역방향 동작을 중심으로 진행했다. 외부 수상/공인 디자인 평점이나 물리 기기 FPS·배터리·실제 Safari 주소 표시줄/nonzero safe-area 검증을 주장하지 않는다. 외부 사진·영상·새 글꼴·새 런타임 의존성은 추가하지 않았다.
 
 공개 화면의 최종 검토에서 큰 도시가 하단 chapter 탐색 뒤를 지날 때 일부 링크 대비가 약해지는 부분을 추가 발견했다. 탐색 영역 자체에만 night 배경을 적용했다. canvas나 카메라·scroll clock·본문 구성은 바꾸지 않았으며, 작은 실제 조작 영역의 대비를 확보하는 수정이다.
+
+v3.0 공개 배포 확인:
+
+- 주 구현 소스 `9574c8c7f5f3263b2f322e5fd6df1c55a945d910`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43225378046 — completed/success. 공개 전체 궤적 **14/14**를 다시 확인했다.
+- 탐색 대비를 보강한 최종 소스 `9cf71342682339282346b915c92dcbcaa7f1d400`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43225950415 — completed/success. CI의63개 테스트·문법·export와 Pages upload/deploy가 통과했다.
+- 최종 공개 HTML·기본/새 스타일·앱 모듈·Three·브랜드/그림/글꼴·라이선스 **31개 HTTP200/로컬 소스와 바이트 일치**.
+- 공개 최종 UI **10/10**: 새 스타일과 clock, 실제80/74/65·80/10/10, 멈춘 뒤 header current, 탐색 배경 대비,320px 전체 비교표, 가려진 연결 출발점 억제, 마지막 CTA, 실제 체험창, Escape focus/scroll 복귀, script errors0. 실제 공개1440 criteria·320comparison/closing 화면도 시각 확인했다.
