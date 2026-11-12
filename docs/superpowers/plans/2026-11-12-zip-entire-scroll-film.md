@@ -21,4 +21,4 @@ Own scripts/main.mjs,motion.mjs/package/README/docs andscopedfixesafteragentsfin
 - [x] Native dialogopenclose/ESC/focusandwindowpositionpreserved; modalinternalanchorsscrollmodalonly; actualdemoquery/statepreserved, filmindependent.
 - [x] package2.2,newmodulesyntax; localchecks/independentreview.
 - [x] Actual8chapterscrollvideo+forward/reverse/jitter/fastseek/GPU; verifyall8primarygraphicmotionsnotmerelyintro; weights/colors/numberslinked, noforcedmanualinput. Dialogkeyboard/selection/share/empty, fallbacks/AXE/5widths.
-- [ ] Authorizedsourcecommit/ffmain/push/Actions/publicbyte+behaviorreadback, finalreceipt+cleanup. NoPublishbeforefullfilmacceptance.
+- [x] Authorizedsourcecommit/ffmain/push/Actions/publicbyte+behaviorreadback, finalreceipt+cleanup. Source313fda7;Actions43174162750;public14+15,21filesbyte-match.

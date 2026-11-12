@@ -204,3 +204,11 @@ v2.1은 경계 안정화의 내부 checkpoint였으며 공개하지 않았다. �
 - Taste 소스 **0 FAIL/0 WARN**, 실제1440/768/390 **0 FAIL/3 WARN**. `few-pictures`만 자체3D/데이터 그래픽을 중심 미디어로 쓰는 명시적 예외다. 별도 영상 부재는 실제 조작 가능한3D로, pinned-over-picture는 canvas 위의 불투명 데이터 표면으로, still-page13개 측정은 실제8장 전체 궤적/중간 동작 확인과 읽기 정지 설계로 판단했다. 장식용 사진/상시 루프를 추가하지 않았다.
 
 실물 휴대폰 GPU·배터리·FPS나 의학적인 눈 피로 개선은 측정하지 않았다. 가상 데이터·개발 중 서비스라는 고지를 유지한다.
+
+v2.2 공개 배포 확인:
+
+- 배포 소스 `313fda72c29fc0076aa8b3c61d3ba455626401f0`.
+- Actions https://github.com/YeByeol/ZipLanding/actions/runs/43174162750 — completed / success.
+- https://yebyeol.github.io/ZipLanding/ 실제 전체 궤적 **14/14**, 선택 체험 **15/15** 통과.8장 모두의 그래픽 변화·정지 camera·경계 왕복·역방향·자동 점수/가격·별도창 state/focus/scroll복귀를 공개 페이지에서 다시 확인했다.
+- 공개 HTML/CSS/전체 앱 모듈/Three2개/로고·그림·글꼴·공유 이미지 **21개 모두 HTTP200이며 로컬 배포 소스와 바이트 일치**.
+- 공개390px에서 기준→근거→마무리 native 링크와 최종 graphics를 확인했다. overflow0, main 안의 강제 입력0, Pretendard 로드, browser errors0.
