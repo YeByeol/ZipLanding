@@ -355,3 +355,13 @@ v3.1 공개 배포 확인:
 - Impeccable 검사에는 기존 의미 보라4개와 체험 table wrapper1개의 경고가 남는다. 기존 브랜드·실제 cell 여백의 알려진 범위이며 새 테마·글꼴·의존성은 추가하지 않았다.
 
 설계 근거는 `superpowers/specs/2026-11-13-zip-flow-layout.md`, 로컬 캡처/측정은 `qa/flow/`, 독립 확인은 `qa/overlap/accept/`, 탐색과 reset은 `qa/navigation-dock/`에 있다. QA 디렉터리는 배포 아티팩트에 포함하지 않는다. 실물 휴대폰·Safari 주소 표시줄·nonzero safe-area·FPS 검증을 주장하지 않는다.
+
+최종 추가 확인에서1280×720 환산의 panel scrollHeight/clientHeight는576/576px,1000×800 비교는633/633px로 padding만 남던 스크롤도0이었다. 글자 크기만 두 배로 바꾼 비교 장의 QA 시뮬레이션에서는 Tab→읽기 영역→End로 마지막1995/2001/2007 행까지 접근했다. 이는 실제 browser zoom 검증이 아니며 시뮬레이션의 일부 열 간격은 좁았다. 독립 최종 코드 검토에서 새 기능·접근성 차단 사항은 찾지 못했다.
+
+v3.2 공개 배포 확인:
+
+- 배포 소스 `0120869b15788c424a16f35bef38bff87eb266ad`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43256196532 — completed/success.68개 테스트·syntax·SVG export와 Pages upload/deploy가 통과했다.
+- https://yebyeol.github.io/ZipLanding/ HTML·CSS·앱·자산 **31개 HTTP200/배포 소스와 바이트 일치**.
+- 공개1440×900·1440×860·320×640의8장 **24개 hold**에서 설명/HUD·HUD/dock·탐색/고지/범례의 교차0, 문서 가로 넘침0, 내부 강제 스크롤0,44px 이상 조작부와 full-stage 도시를 확인했다. 상단 진행선 하나만 표시되며, 공개 비교·환산의 원본 캡처도 직접 읽었다. 낮은800×500에서는8개 일반 흐름과 숨겨진 film 탐색을 확인했다. 이 묶음의 실제 최소 copy/HUD 간격은34.27px이다.
+- 공개 탐색 **10/10**: 이전/다음/native 선택기·Enter·경계 비활성화와 focus·현재 장의 접근성 이름·체험 state/query 보존·dialog Escape 복귀·reduced 동작·375×667 조작부가 통과했다. 실제 browser errors0.
+- 공개 script 차단에서도8개 일반 문서 흐름,7개 비교 사실/21개 단위,39.17/4.17·실제 bar 비율과 가로 넘침0을 확인했다. 결과와 캡처는 `qa/flow/public/`에 있으며 검증 전용 브라우저는 닫았다.
