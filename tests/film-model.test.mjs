@@ -53,6 +53,17 @@ test('price bars compare A and the two actual peers on one zero-based axis', () 
   assert.deepEqual(model.filmSnapshot(0).priceBars,snapshot.priceBars,'preferences cannot change money');
 });
 
+test('full-city framing follows the same eight-chapter timeline and stays fixed for reduced motion',()=>{
+ const values=[.84,.9,1,.9,.88,.94,.97,.84];
+ for(let i=0;i<values.length;i++)assert.deepEqual(model.filmSnapshot(i/7).frame.fit,{padding:20,occupancy:values[i]});
+ for(let i=0;i<=100;i++){
+  const progress=i/100,a=model.filmSnapshot(progress,'discover').frame.fit,b=model.filmSnapshot(progress,'closing').frame.fit;
+  assert.deepEqual(a,b);assert.ok(a.occupancy>=.84&&a.occupancy<=1);
+  assert.deepEqual(model.filmSnapshot(progress,undefined,{reduced:true}).frame.fit,{padding:20,occupancy:.84});
+  assert.deepEqual(model.filmSnapshot(progress,undefined,{complete:true}).frame.fit,{padding:20,occupancy:.84});
+ }
+});
+
 test('all eight chapters have deterministic scroll beats and completed accessible variants', () => {
   assert.equal(typeof model.filmSnapshot,'function');
   const phases=['discover','price','conditions','criteria','comparison','value','evidence','closing'];

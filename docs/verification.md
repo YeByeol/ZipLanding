@@ -241,3 +241,26 @@ v2.3 공개 배포 확인:
 - 소스 `2965f127022d5e2e7e3df4aaaf958091ff7f2448`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43179365177 — completed / success.
 - https://yebyeol.github.io/ZipLanding/ 공개 새 기능 **20/20**, 전체8장 궤적 **14/14** 통과. 실제 연결선/가격 비율, 모바일 표·선택기, 마지막 버튼과 focus/scroll 복귀를 다시 확인했다.
 - HTML·CSS·앱 모듈·Three·브랜드/그림/글꼴 자산 **22개 HTTP200/로컬 검증 소스와 바이트 일치**.
+
+## v2.4 위쪽 absolute 구도와 실제 하단 잘림 수정
+
+사용자가 동작 중 하단이 잘리는 느낌을 지적하고 absolute 레이어를 화면 위쪽에 배치하는 방향을 제안했다. 실제5개 viewport에서 HTML 하단 넘침은0이었지만 도시 픽셀은 canvas 경계에서 잘렸다.1366×768에서는 y593의 도시 픽셀580개가 y594에서0이 됐다. 실제 production geometry30,328개 정점의 조건 장 하단 초과량은1366에서514px,1440에서612px였다. 위치 이동만으로는 이 frustum 잘림을 해결할 수 없었다.
+
+수정 설계는 `superpowers/specs/2026-11-12-zip-raised-safe-framing.md`다.
+
+- 제목·도시·데이터의 absolute 구도를 위로 조정했다.5개 화면에서 도시 draw 영역 중심이34.6–47.6px 올라가고 높이는62.4–76.2px 커졌다. 제목 최대64px, 짧은 desktop에서는56px이다. 하단 메뉴·범례·고지·CTA에는 별도 safe-area 여백을 유지한다.
+- Story 전용 `frame.fit`에서 실제 world bounds·billboard 반경·선택 lift를 보수적으로 포함하고, 현재 view-space의 전체 bounds를20CSSpx 여백 안에 맞춘다. off-axis projection과 실제 zoom을 같은 draw에서 적용한다. 일반 camera API와 직접 체험/manual 동작은 유지한다.
+- 기존 큰 macro 확대는 완전한 모형의 점유율·시점·표지 변화로 조정했다. `viewZoom`은 실제 적용값이다. fit 생략 시 기존 centered frustum을 복원하고, 반복 draw/resize에 fitted projection이 누적되지 않는다.
+- 조건 장의 세 수치는 panel이 등장할 때부터 읽힌다. beat는 강조선에 사용해 빈 반투명 카드가 먼저 덮이던 상태를 없앴다. 마무리의 넓은 night mask도 제거하고 Z→ZIP seal을 제목 아래로 옮겨320px에서 도시 전체가 드러난다.
+
+검증:
+
+- Node **53/53**, 전체 syntax·SVG 내보내기·diff 검사 통과. 실제 production builder를 사용하는53개 테스트 안의 **620개** hold/전환/aspect containment 사례에서 여백·near/far·billboard/lift를 확인했다.
+- 실제 GPU/readPixels **36개**:8개 hold×4개 실제 canvas 크기와 fit 해제/복귀·resize/idempotence·experience 수동 zoom을 확인했다. DPR2 환경의 capped buffer1.5를 CSSpx로 변환해 여백을 검사했다. 조건 장의 실제 하단 여백은1440에서33.36px,1366에서30.67px,390에서53.33px,320에서30.67px이다.
+- 실제 **이동 중 GPU42개**:1366×768·390×844의7개 경계마다 앞/중간/뒤3개 active blend를 그렸다. 각 지점에서1회 same-task paint, 현재 snapshot과 맞는 actual projection, nonzero pixels와 bounds containment를 확인했다. 최소 실제 픽셀 여백30CSSpx, 최소 보수적 투영 여백20.34CSSpx이다.
+- 5개 화면×8개 hold40개와 중간/높이 변경19개, 총59개 layout 기록에 가로 넘침·읽기/조작 영역 겹침 없음. 모든 장의 도시 rect 동일, 마무리 CTA48px·모바일 선택기44px 유지.1366 중간 전환,1440높이1000→768,390높이844→740을 실제로 살폈다.
+- 조건p=.24의 beat가0일 때도 세 수치의 own opacity1/transform none을 확인했다. closing correction 뒤320px에서 전체 도시가 seal과CTA 사이에 들어오는 화면을 확인했다. dense compact 가격 장의 데이터 표면에 의한 가림은 남지만 renderer의 절단이나 가짜 mask와 구분한다.
+- 실제 전체 궤적 **14/14**, 선택 체험 **15/15**, 연결선·가격축·모바일 탐색·마무리 focus·reduced의 기존 새 기능 **20/20** 회귀 통과. 조건 강조선의 pseudo-element도 실제 motion 수집에 포함했다.
+- 독립 검토에서 source·실제 이동 GPU 증거·최종320 closing/1366중간/1440장면을 확인하고 미해결 사항 없음으로 마쳤다. UI detector는 기존 의미 보라색과 내부 padding wrapper 경고만 남았다.
+
+실제 물리 기기의 브라우저 UI·nonzero safe-area·FPS/배터리는 검증하지 않았다. synthetic viewport 변경을 실제 Safari/Chrome 주소 표시줄 검증으로 주장하지 않는다.

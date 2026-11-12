@@ -1,3 +1,4 @@
+import { fitOrthographicBounds, storyWorldBounds } from './scene-framing.mjs';
 import { BUILDINGS } from './demo.mjs';
 import { PALETTES, colorFrameForTransition, mountCity } from './city.mjs';
 import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset, clampPresentation, presentationForProgress } from './scene-model.mjs';
@@ -25,7 +26,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   let target = { x: 0, y: .28, z: 0 }, targetCenter = { ...target };
   let reduced = motion.matches, destroyed = false, initialized = false, visible = true, lost = false;
   let renderer, world, camera, canvas, THREE, frame = 0, previousTime = 0, hovered = null, pointer = null;
-  let resizeObserver, visibilityObserver, entryObserver;
+  let resizeObserver, visibilityObserver, entryObserver, sceneBounds, storyFit;
   const objects = [], resources = new Set(), listeners = [], paintListeners = new Set();
   let anchorPoint;
   const tooltip = document.createElement('div');
@@ -81,7 +82,20 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     const distance = 14;
     camera.position.set(target.x + Math.sin(view.yaw) * Math.cos(view.pitch) * distance, target.y + Math.sin(view.pitch) * distance, target.z + Math.cos(view.yaw) * Math.cos(view.pitch) * distance);
     camera.lookAt(target.x, target.y, target.z);
-    if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
+    const width = container.clientWidth, height = container.clientHeight;
+    if (width > 0 && height > 0) {
+      const aspect = width / height, halfWidth = Math.max(5.6, 3.65 * aspect);
+      let projection = { left: -halfWidth, right: halfWidth, top: halfWidth / aspect, bottom: -halfWidth / aspect, zoom };
+      if (storyOwned() && storyFit && sceneBounds) {
+        camera.updateMatrixWorld(true);
+        const fit = fitOrthographicBounds(sceneBounds, camera.matrixWorldInverse.elements, { width, height, ...storyFit });
+        if (fit) { projection = fit; zoom = fit.zoom; }
+      }
+      if (Object.entries(projection).some(([key, value]) => camera[key] !== value)) {
+        Object.assign(camera, projection);
+        camera.updateProjectionMatrix();
+      }
+    }
     publishView();
   }
 
@@ -193,6 +207,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       fill.position.set(5, 4, -5);
       world.add(fill);
       buildDiorama();
+      sceneBounds = storyWorldBounds(world, THREE);
       bindPointers();
       listen(canvas, 'webglcontextlost', event => { event.preventDefault(); lost = true; fallbackMode(); });
       listen(canvas, 'webglcontextrestored', () => { lost = false; resize(); requestRender(); });
@@ -494,6 +509,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     setPresentation(frame) {
       if (destroyed || interactive || manual) return;
       const next = reduced ? presentationForProgress(0) : clampPresentation(frame);
+      storyFit = frame?.fit && typeof frame.fit === 'object' ? { padding: frame.fit.padding, occupancy: frame.fit.occupancy } : null;
       if (frame?.colorBlend) {
         const { from, to, mix, continuous } = frame.colorBlend;
         if (Object.hasOwn(PALETTES, from) && Object.hasOwn(PALETTES, to)) {

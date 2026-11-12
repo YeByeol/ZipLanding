@@ -10,6 +10,8 @@
 
 건물 표지와 설명은 실제3D/SVG 투영 좌표의 선으로 연결됩니다. 가려지거나 화면 밖에 있는 표지의 선은 숨깁니다. 가격은 같은0 기준축으로 비교하며 모바일에서는 조건을 행렬로 읽고 장면 선택기로 마지막까지 이동할 수 있습니다.
 
+제목·도시·데이터는 위쪽 중심의 absolute 구도로 배치하고 하단 탐색 영역을 비워 둡니다. 소개 전용 카메라는 전체 모형의 실제 bounds를 여백 안에 맞춰, 이동 중에도 canvas 경계에서 도시가 잘리지 않게 합니다.
+
 공개 페이지: https://yebyeol.github.io/ZipLanding/
 
 이 저장소는 서비스 컨셉을 소개하는 정적 웹사이트입니다. 도시 모형과 모든 체험 값은 직접 만든 가상 예시이며 실제 관악구 건물, 지역 가격, 현재 매물이나 완성된 서비스를 나타내지 않습니다.
@@ -35,6 +37,7 @@ ES modules를 사용하므로 로컬 HTTP 서버로 열어주세요. GitHub Page
 - `scripts/demo.mjs`: 24개 가상 건물, 조건 점수, 가격 비교, 공유 URL 검증
 - `scripts/city.mjs`: SVG 대체 모형과 3D가 공유하는 색 계산
 - `scripts/scene3d.mjs`, `scene-model.mjs`: 건축 모형 3D, 이름표·건물 선택, 사선·내려다보기·선택 확대, 카메라 범위와 그래픽 대체
+- `scripts/scene-framing.mjs`: 소개 모형의 전체 geometry fit과 화면 안쪽 여백 계산
 - `scripts/story-timeline.mjs`, `film-model.mjs`, `story.mjs`: 여덟 장의 동작·읽기 정지·연속 전환과 자동 시연의 실제 계산 snapshot
 - `scripts/story-connections.mjs`: 실제 건물 표지와 데이터의 투영 연결, 가림/클리핑 처리
 - `scripts/motion.mjs`: 한 프레임에 모은 스크롤 연출, 읽기 진행, 현재 메뉴와 움직임 줄이기
