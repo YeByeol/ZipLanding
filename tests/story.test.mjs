@@ -71,3 +71,11 @@ test('automatic bars use exact snapshot weights even when rounded number text ho
  assert.equal(v.fields.find(f=>f.dataset.filmField==='weight-slope').textContent,before,'tiny scroll keeps rounded readable numbers');
  assert.equal(v.weights[0].style.transform,`scaleX(${filmSnapshot(p+.0000001).weights.slope/100})`,'graphic follows exact same weights as the city');
 });
+
+test('the closing action cannot receive focus while its enhanced panel is aria-hidden',()=>{
+ const v=fixture();v.seek(6.5/7+.004);
+ assert.equal(v.panels[7].getAttribute('aria-hidden'),'true');assert.equal(v.panels[7].inert,true);
+ v.seek(1);assert.equal(v.panels[7].inert,false);assert.ok(v.panels.slice(0,7).every(p=>p.inert));
+ v.low(true);assert.ok(v.panels.every(p=>!p.inert),'ordinary reading flow leaves every chapter usable');
+ v.controller.destroy();assert.ok(v.panels.every(p=>!p.inert));
+});

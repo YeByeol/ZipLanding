@@ -39,6 +39,20 @@ test('film value story uses two real peers and preserves X missingness', () => {
   assert.deepEqual(evidence.frame.weights,evidence.weights);
 });
 
+test('price bars compare A and the two actual peers on one zero-based axis', () => {
+  const snapshot=model.filmSnapshot(5/7);
+  assert.deepEqual(snapshot.priceBars?.map(row=>row.id),['a','k','v']);
+  const maximum=Math.max(...snapshot.priceBars.map(row=>monthlyUnit(BUILDINGS.find(b=>b.id===row.id))));
+  for(const row of snapshot.priceBars){
+    assert.equal(row.unit,monthlyUnit(BUILDINGS.find(b=>b.id===row.id)));
+    assert.equal(row.ratio,row.unit/maximum);
+    assert.equal(snapshot.fields['unit-'+row.id],row.unit.toFixed(2));
+    assert.ok(row.ratio>0&&row.ratio<=1);
+  }
+  assert.ok(Math.abs(snapshot.priceBars[0].ratio-.5)<1e-12);
+  assert.deepEqual(model.filmSnapshot(0).priceBars,snapshot.priceBars,'preferences cannot change money');
+});
+
 test('all eight chapters have deterministic scroll beats and completed accessible variants', () => {
   assert.equal(typeof model.filmSnapshot,'function');
   const phases=['discover','price','conditions','criteria','comparison','value','evidence','closing'];

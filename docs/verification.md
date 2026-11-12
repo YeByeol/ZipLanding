@@ -212,3 +212,26 @@ v2.2 공개 배포 확인:
 - https://yebyeol.github.io/ZipLanding/ 실제 전체 궤적 **14/14**, 선택 체험 **15/15** 통과.8장 모두의 그래픽 변화·정지 camera·경계 왕복·역방향·자동 점수/가격·별도창 state/focus/scroll복귀를 공개 페이지에서 다시 확인했다.
 - 공개 HTML/CSS/전체 앱 모듈/Three2개/로고·그림·글꼴·공유 이미지 **21개 모두 HTTP200이며 로컬 배포 소스와 바이트 일치**.
 - 공개390px에서 기준→근거→마무리 native 링크와 최종 graphics를 확인했다. overflow0, main 안의 강제 입력0, Pretendard 로드, browser errors0.
+
+## v2.3 도시와 데이터의 연결·모바일 읽기 개선
+
+기존8장 이야기·브랜드·camera poses·계산은 유지하고, 실제 화면에서 확인한 도시/수치의 단절·좁은 비교 카드·가려진 마지막 메뉴·마무리 행동을 개선했다. 설계는 `superpowers/specs/2026-11-12-zip-connected-film-refinement.md`다.
+
+- 실제 marker 월드 좌표의 WebGL 투영과 SVG getScreenCTM으로 A/B/C/K/V/X를 데이터에 연결한다. 초기 GPU 준비·resize·context loss·scroll beat의 DOM 이동도 같은 draw/task에서 갱신한다. 읽기 전용 API와 구독 해제를 사용하며 상시 RAF loop는 없다.
+- 건물 중심이 불투명 데이터 표면에 가려지거나 frustum 밖이면 연결선을 숨긴다. 화면 가장자리에 가짜 좌표를 붙이지 않는다. 비교 대상·결측 자료의 의미도 유지한다.
+- A/K/V 월 환산 단가를 같은0 기준축으로 그린다. 표시1.70/3.41/2.54만/㎡, 원래 계산값 기준 bar 비율0.5/1/0.74709219858156이다. noJS에도 같은 정적 비율과 단위를 제공한다.
+- 모바일의 공통 행 제목·A/B/C 열로7개 비교 사실을 유지한다. 44px native 장면 선택기와 현재 위치를 제공해 마지막 메뉴의 잘림을 없앴다. 처음 스크롤 안내와48px 마무리 직접 체험 버튼을 추가했다.
+- 마무리 버튼은 장이 aria-hidden일 때 inert여서 부분 등장 중 Tab이 들어가지 않는다. 직접 체험의 close/ESC는 마지막 장의 위치와 버튼 focus를 복원한다.
+
+검증:
+
+- Node **49/49**, syntax·SVG 내보내기·diff 검사 통과. 새 투영/CTM/clip/lifecycle, 실제 가격축, 선 경로/가림, inactive CTA 검증을 추가했다. 독립 검토의 opaque-wrapper 가림 표식도 수정하고 미해결 사항 없음으로 확인했다.
+- 실제 투영 API **17개**: WebGL 실제 marker 좌표, readonly/no draw, same-task callback, 초기화, resize, 화면 밖/숨은 표지, 실제 context loss, SVG CTM/DPR2, unsubscribe/destroy.
+- 새 기능 실제 **20개**:6개 관련 장의 유효한 marker→데이터 선과 가림 배제, 같은 가격축/실제 길이, 움직이는 카드의 선 역방향 일치, 모바일 native 표와 모든 값,44px 선택기·마지막 장·현재 위치, 마무리 CTA/ESC/focus/scroll, inactive CTA, reduced의 정적 가격 비율.
+- 기존 실제 전체 궤적 **14/14**, 선택 체험 **15/15** 회귀 통과.8개 장의 graphics·고정 canvas·경계 왕복·같은 진행값·방문자 state/query 독립과 공유/결측/빈 비교를 유지한다.
+- root component fallback 실제 **10개**: fresh vendor 차단에서 선과 SVG CTM→stage 좌표 일치, 스크롤 없는 resize 갱신, 실제 context loss 뒤 같은 선 DOM의 SVG 좌표 갱신, reduced/lowheight 선 숨김, JS 차단의8개 일반 흐름·모바일 표·실제 가격 비율·비활성/숨은 선택기.
+- 5개 화면 크기×8장, 총40개 hold를 한 묶음 검토/수정 후 확인했다. 모든 장의 도시 rect 동일, 정보/조작 겹침·가로 overflow 없음. CTA48px 표시5/5, 모바일 선택기44px3/3이다. 실제 전체32지점과 역방향3개 장을 새 영상으로 확인했다.
+- 실제 연결선 수(가격/조건/기준/비교/환산/근거):1440px은1/1/3/3/3/1,768·390px은1/1/3/3/1/1,375·320px은1/1/3/3/0/1. 작은 두 화면의 환산 장에서는 실제 건물이 공식/차트에 가려져 선을 숨기며 값·축·단위는 유지한다.
+- axe320px 비교 표 **47 passes/0 violations/1 incomplete**, 마무리 **42/0/1**. 남은 incomplete는 중첩 그래픽의 자동 배경 대비 판정이며 실제 읽기 표면을 확인했다. Impeccable 결과는 확정된 점수 보라색4개와 실제 내부 padding이 있는 wrapper2개에 대한 warning만 남았다.
+
+검증은 실제 브라우저·WebGL/SVG·viewport 범위이며 실물 휴대폰 FPS·배터리나 의학적인 눈 피로 개선을 측정하지 않았다. 새 라이브러리·테마·실거래 데이터는 추가하지 않았다.

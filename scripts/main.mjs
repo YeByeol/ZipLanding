@@ -71,6 +71,13 @@ document.addEventListener('click', event => {
   }
 });
 window.addEventListener('hashchange', () => scrollFilmTo(location.hash));
+$('#story-chapter-select')?.addEventListener('change',event=>{
+  const hash='#story-'+event.target.value;
+  if(scrollFilmTo(hash,'instant')){
+    history.pushState(null,'',hash);
+    story.updateScroll({reduced:matchMedia('(prefers-reduced-motion: reduce)').matches});
+  }
+});
 
 function toast(message) {
   clearTimeout(toastTimer);

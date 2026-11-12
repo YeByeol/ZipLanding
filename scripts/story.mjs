@@ -1,6 +1,7 @@
 import { PALETTES, mixColor } from './city.mjs';
 import { PHASES, MODES, storyTimeline } from './story-timeline.mjs';
 import { filmSnapshot } from './film-model.mjs';
+import { mountStoryConnections } from './story-connections.mjs';
 
 const captions = {
   discover:'직접 만든 24개 가상 장소입니다. 지금 연결된 실제 거래나 지역 자료가 아닙니다.',
@@ -26,11 +27,13 @@ export function mountStory({root,element,owner}) {
   const all=selector=>[...(root?.querySelectorAll(selector)??[])];
   const steps=all('[data-story-step]'),panels=all('[data-story-panel]'),links=all('[data-story-link]');
   const fields=all('[data-film-field]'),weights=all('[data-film-weight]');
+  const priceBars=all('[data-film-price-bar]');
+  const chapterSelect=root?.querySelector('#story-chapter-select'),position=root?.querySelector('#story-position');
   const legacyFields=all('[data-story-field]'),units=all('[data-story-unit]');
   const caption=root?.querySelector('#story-caption'),legend=root?.querySelector('#story-legend'),selection=root?.querySelector('#hero-selection');
   const originalRoot=Object.fromEntries(['storyPhase','storyEnhanced'].map(key=>[key,root?.dataset[key]]));
   const initialMode=element?.dataset.storyMode,captionOpacity=caption?.style.opacity;
-  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
+  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
   const originalLinks=links.map(link=>({link,aria:link.getAttribute('aria-current')}));
   const viewport=root?.ownerDocument?.defaultView;
   const lowHeight=viewport?.matchMedia?.('(max-height: 620px)');
@@ -38,6 +41,7 @@ export function mountStory({root,element,owner}) {
   let reduced=viewport?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches??false;
   let progress=0,phase,presentationKey,fieldsKey,destroyed=false;
   const setBeat=(panel,key,value)=>panel.style.setProperty?panel.style.setProperty(key,value):panel.style[key]=value;
+  const connections=mountStoryConnections({root,owner});
 
   function render() {
     if(destroyed)return;
@@ -50,8 +54,11 @@ export function mountStory({root,element,owner}) {
       const index=PHASES.indexOf(panel.dataset.storyPanel),alpha=enhanced?timeline.opacities[index]??0:1;
       panel.style.opacity=String(alpha);panel.hidden=alpha===0;
       panel.setAttribute('aria-hidden',String(enhanced&&panel.dataset.storyPanel!==phase));
+      panel.inert=enhanced&&panel.dataset.storyPanel!==phase;
       snapshot.beats[panel.dataset.storyPanel]?.forEach((beat,i)=>setBeat(panel,'--beat-'+(i+1),String(beat)));
     }
+    if(chapterSelect)chapterSelect.value=phase;
+    if(position)position.textContent=`${String(PHASES.indexOf(phase)+1).padStart(2,'0')} / 08`;
     for(const link of links){
       const target=link.dataset.storyLink||link.getAttribute('href')?.replace('#story-','');
       if(target===phase)link.setAttribute('aria-current','step');else link.removeAttribute('aria-current');
@@ -72,9 +79,12 @@ export function mountStory({root,element,owner}) {
       for(const unit of units)unit.hidden=legacy[unit.dataset.storyUnit]==='자료 없음';
     }
     for(const bar of weights){const value=snapshot.weights[bar.dataset.filmWeight];if(value===undefined)continue;bar.style.transform=`scaleX(${value/100})`;bar.setAttribute('aria-valuenow',String(value));bar.setAttribute('aria-valuetext',`${snapshot.fields['weight-'+bar.dataset.filmWeight]}%`);}
+    for(const bar of priceBars){const row=snapshot.priceBars.find(row=>row.id===bar.dataset.filmPriceBar);if(row)bar.style.setProperty('--price-ratio',String(row.ratio));}
     if(selection)selection.textContent=snapshot.selected==='x'?'장소 X · 조건과 내 기준 점수 자료 없음':`장소 A · 월세 35만 · 시연 내 기준 ${snapshot.fields['score-a']}점`;
     const key=JSON.stringify(snapshot.frame);
+    connections.setSnapshot(snapshot);
     if(key!==presentationKey){presentationKey=key;owner?.setPresentation(snapshot.frame);}
+    connections.update();
   }
   render();
   return {
@@ -89,10 +99,11 @@ export function mountStory({root,element,owner}) {
     },
     destroy(){
       destroyed=true;
+      connections.destroy();
       if(root)for(const[key,value]of Object.entries(originalRoot)){if(value===undefined)delete root.dataset[key];else root.dataset[key]=value;}
       if(element){if(initialMode===undefined)delete element.dataset.storyMode;else element.dataset.storyMode=initialMode;}
       if(caption)caption.style.opacity=captionOpacity??'';
-      for(const{panel,hidden,aria,opacity,beats}of originalPanels){panel.hidden=hidden;panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});}
+      for(const{panel,hidden,inert,aria,opacity,beats}of originalPanels){panel.hidden=hidden;panel.inert=inert;panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});}
       for(const{link,aria}of originalLinks){if(aria===null)link.removeAttribute('aria-current');else link.setAttribute('aria-current',aria);}
     },
   };

@@ -17,6 +17,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   const fallback = mountCity(container, { buildings, onSelect, interactive });
   const originalPosition = container.style.position;
   const svg = container.querySelector('svg');
+  const svgMarkers = new Map([...svg.querySelectorAll('[data-building-id]')].map(node => [node.dataset.buildingId, node.querySelector('.building-marker')]));
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state = { mode: 'price', weights: undefined, selected: 'a', saved: ['a', 'b', 'c'] };
   let view = { ...DEFAULT_VIEW }, targetView = { ...view }, manual = false, progress = .5;
@@ -25,7 +26,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   let reduced = motion.matches, destroyed = false, initialized = false, visible = true, lost = false;
   let renderer, world, camera, canvas, THREE, frame = 0, previousTime = 0, hovered = null, pointer = null;
   let resizeObserver, visibilityObserver, entryObserver;
-  const objects = [], resources = new Set(), listeners = [];
+  const objects = [], resources = new Set(), listeners = [], paintListeners = new Set();
+  let anchorPoint;
   const tooltip = document.createElement('div');
   tooltip.className = 'scene-tooltip'; tooltip.hidden = true; tooltip.setAttribute('aria-hidden', 'true');
   const tooltipLabel = document.createElement('strong'), tooltipValue = document.createElement('span');
@@ -57,6 +59,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   const colorFrame = building => colorFrameForTransition(building, buildings, state.colorBlend ?? { from: state.mode }, state.weights);
   const storyOwned = () => preset === 'story' && !interactive && !manual;
 
+  const notifyPaint = () => { for (const listener of paintListeners) listener(); };
+
   function fallbackMode() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
@@ -66,6 +70,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     tooltip.hidden = true;
     container.dataset.renderer = 'svg';
     onStatus('svg');
+    notifyPaint();
   }
 
   function requestRender() {
@@ -128,13 +133,14 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       fallbackMode();
       return;
     }
+    notifyPaint();
     if (unsettled) requestRender();
   }
 
   function resize() {
-    if (!renderer || destroyed) return;
+    if (destroyed) return;
     const width = container.clientWidth, height = container.clientHeight;
-    if (!width || !height) return;
+    if (!renderer || lost || !width || !height) { notifyPaint(); return; }
     renderer.setSize(width, height, false);
     const aspect = width / height;
     const halfWidth = Math.max(5.6, 3.65 * aspect);
@@ -190,8 +196,6 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       bindPointers();
       listen(canvas, 'webglcontextlost', event => { event.preventDefault(); lost = true; fallbackMode(); });
       listen(canvas, 'webglcontextrestored', () => { lost = false; resize(); requestRender(); });
-      resizeObserver = new ResizeObserver(resize);
-      resizeObserver.observe(container);
       if ('IntersectionObserver' in window) {
         visibilityObserver = new IntersectionObserver(entries => {
           visible = entries[0].isIntersecting;
@@ -205,7 +209,6 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       // A partially created scene must never replace the usable fallback later.
       lost = true;
       fallbackMode();
-      resizeObserver?.disconnect();
       visibilityObserver?.disconnect();
       resources.forEach(resource => resource.dispose());
       resources.clear();
@@ -401,6 +404,10 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     if (reduced) { targetView = { ...view }; previousTime = 0; }
     requestRender();
   });
+  if (typeof ResizeObserver === 'function') {
+    resizeObserver = new ResizeObserver(resize);
+    resizeObserver.observe(container);
+  }
   if ('IntersectionObserver' in window) {
     entryObserver = new IntersectionObserver(entries => {
       if (entries.some(entry => entry.isIntersecting)) { entryObserver.disconnect(); initialize(); }
@@ -422,17 +429,67 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (frame) cancelAnimationFrame(frame);
       frame = 0;
       render(0);
-    } else requestRender();
+    } else {
+      if (container.dataset.renderer !== 'webgl') notifyPaint();
+      requestRender();
+    }
   }
 
+  const cssVisible = node => {
+    if (!node) return false;
+    const style = typeof getComputedStyle === 'function' ? getComputedStyle(node) : node.style;
+    return style.display !== 'none' && style.visibility !== 'hidden' && style.visibility !== 'collapse' && style.opacity !== '0';
+  };
+
   return {
+    projectAnchors(ids) {
+      if (!Array.isArray(ids)) return [];
+      const active = container.dataset.renderer === 'webgl' && !lost ? 'webgl' : 'svg';
+      const width = container.clientWidth, height = container.clientHeight;
+      const usable = !destroyed && visible && !document.hidden && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 && cssVisible(container);
+      const rect = usable ? container.getBoundingClientRect() : null;
+      return ids.map(id => {
+        const result = { id, x: 0, y: 0, visible: false, renderer: active };
+        if (!usable) return result;
+        if (active === 'webgl') {
+          const item = objects.find(object => object.id === id);
+          if (!camera || !THREE || !cssVisible(canvas) || !item?.marker.visible || !item.group.visible || item.marker.material.visible === false || item.marker.material.opacity === 0) return result;
+          anchorPoint ??= new THREE.Vector3();
+          item.marker.getWorldPosition(anchorPoint).project(camera);
+          if (![anchorPoint.x, anchorPoint.y, anchorPoint.z].every(Number.isFinite)) return result;
+          result.x = (anchorPoint.x + 1) * width / 2;
+          result.y = (1 - anchorPoint.y) * height / 2;
+          result.visible = anchorPoint.z >= -1 && anchorPoint.z <= 1;
+        } else {
+          const marker = svgMarkers.get(id);
+          if (!cssVisible(svg) || !cssVisible(marker)) return result;
+          const bounds = marker.getBoundingClientRect?.();
+          if (!bounds || !Number.isFinite(bounds.width) || !Number.isFinite(bounds.height) || bounds.width <= 0 || bounds.height <= 0) return result;
+          const matrix = marker.getScreenCTM?.();
+          if (!matrix || ![matrix.e, matrix.f, rect.left, rect.top].every(Number.isFinite)) return result;
+          result.x = matrix.e - rect.left;
+          result.y = matrix.f - rect.top;
+          result.visible = true;
+        }
+        result.visible &&= result.x >= 0 && result.x <= width && result.y >= 0 && result.y <= height;
+        return result;
+      });
+    },
+    onPaint(listener) {
+      if (destroyed || typeof listener !== 'function') return () => {};
+      paintListeners.add(listener);
+      return () => paintListeners.delete(listener);
+    },
     update(next = {}) {
       state = { ...state, ...next };
       clearHover();
       if (container.dataset.renderer !== 'webgl') fallback.update(state);
       updateColors();
       if (storyOwned()) paintStoryFrame();
-      else requestRender();
+      else {
+        if (container.dataset.renderer !== 'webgl') notifyPaint();
+        requestRender();
+      }
     },
     setPresentation(frame) {
       if (destroyed || interactive || manual) return;
@@ -502,6 +559,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     },
     destroy() {
       destroyed = true;
+      paintListeners.clear();
       if (frame) cancelAnimationFrame(frame);
       entryObserver?.disconnect(); visibilityObserver?.disconnect(); resizeObserver?.disconnect();
       listeners.forEach(remove => remove());

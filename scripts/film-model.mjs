@@ -19,6 +19,9 @@ export function filmSnapshot(progress, previousPhase, {reduced=false,complete=fa
     return {...building,score:scoreBuilding(building,weights).score,unit:monthlyUnit(building)};
   });
   const comparison=comparisonFor(a,FINAL);
+  const pricePlaces=[a,...comparison.peers];
+  const priceMaximum=Math.max(...pricePlaces.map(monthlyUnit));
+  const priceBars=pricePlaces.map(building=>({id:building.id,unit:monthlyUnit(building),ratio:monthlyUnit(building)/priceMaximum}));
   const index=PHASES.indexOf(timeline.from)+(PHASES.indexOf(timeline.to)-PHASES.indexOf(timeline.from))*timeline.blend;
   const selected=index>=5.5&&index<6.5?'x':'a';
   const highlightIds=index>=4.5&&index<5.5?['a',...comparison.peers.map(peer=>peer.id)]:index>=3.5&&index<4.5?[...IDS]:[selected];
@@ -27,6 +30,7 @@ export function filmSnapshot(progress, previousPhase, {reduced=false,complete=fa
   fields.unit=monthlyUnit(a).toFixed(2);
   fields['peer-count']=String(comparison.count);
   fields['peer-summary']=comparison.peers.map(peer=>`장소 ${peer.id.toUpperCase()} ${monthlyUnit(peer).toFixed(2)}만/㎡`).join(' · ');
+  for(const row of priceBars)fields['unit-'+row.id]=row.unit.toFixed(2);
   for(const card of cards) {
     fields[`score-${card.id}`]=format(card.score);
     for(const key of ['rent','deposit','area','slope','elevation','year']) fields[`${key}-${card.id}`]=fieldValue(card,key);
@@ -39,5 +43,5 @@ export function filmSnapshot(progress, previousPhase, {reduced=false,complete=fa
   const frame={...presentationForProgress(progress,a,{reduced:reduced||complete}),
     colorBlend:{from:MODES[colors.from],to:MODES[colors.to],mix:colors.blend,continuous:true},
     weights,selected:complete?'a':selected,highlightIds:complete?['a']:highlightIds,saved:[...IDS]};
-  return {timeline,beats,weights,selected,highlightIds,cards,comparison,fields,frame};
+  return {timeline,beats,weights,selected,highlightIds,cards,comparison,priceBars,fields,frame};
 }
