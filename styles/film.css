@@ -298,3 +298,5 @@
 }
 
 @media(max-width:370px){.film-chart-help{display:none}}
+/* The chapter controls keep their contrast when the large city passes behind them. */
+.story-actions{background:var(--night)}
