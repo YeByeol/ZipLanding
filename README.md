@@ -19,13 +19,17 @@ npm test
 npm run check
 ```
 
+Three.js 0.187.0의 공식 브라우저 모듈 두 개를 `vendor/`에 고정해 제공합니다. 런타임 CDN은 사용하지 않습니다. WebGL 2를 사용할 수 없으면 기존 SVG 모형과 비교 기능을 유지합니다.
+
 ES modules를 사용하므로 로컬 HTTP 서버로 열어주세요. GitHub Pages에서는 그대로 동작합니다.
 
 ## 구성
 
 - `index.html`, `styles.css`: 소개, 반응형 화면, 모션과 스크립트 없는 읽기 경로
 - `scripts/demo.mjs`: 24개 가상 건물, 조건 점수, 가격 비교, 공유 URL 검증
-- `scripts/city.mjs`: SVG 도시와 같은 DOM에서의 재색칠·선택 갱신
+- `scripts/city.mjs`: SVG 대체 모형과 3D가 공유하는 색 계산
+- `scripts/scene3d.mjs`, `scene-model.mjs`: 실제 3D, 회전·확대·선택, 카메라 범위와 그래픽 대체
+- `scripts/motion.mjs`: 자연스러운 스크롤 연출, 읽기 진행, 현재 메뉴와 움직임 줄이기
 - `scripts/main.mjs`: 중요도·지도 선택·담기·비교·공유 연결
 - `assets/`: SVG 브랜드·도시 장면, 공유 이미지, 로컬 글꼴
 - `tests/`: Node 기본 테스트
@@ -41,8 +45,10 @@ ES modules를 사용하므로 로컬 HTTP 서버로 열어주세요. GitHub Page
 
 로고와 도시 모형은 이 페이지를 위해 직접 만든 벡터 자산입니다. 실제 지역의 공공 건물 도형·거래 원자료·외부 사진은 포함하지 않습니다.
 
+3D 엔진은 [Three.js 0.187.0](https://github.com/mrdoob/three.js/releases/tag/r187)입니다. 공식 npm 배포본과 같은 두 모듈을 포함하며 MIT 라이선스 전문은 `vendor/THREE-LICENSE.txt`에 있습니다.
+
 Pretendard Variable은 [Pretendard 공식 저장소](https://github.com/orioncactus/pretendard)에서 받아 로컬 제공합니다. SIL Open Font License 1.1 전문은 `assets/fonts/OFL.txt`에 포함되어 있습니다.
 
 ## 배포
 
-`main`에 push하면 GitHub Actions가 테스트·문법 검사를 수행하고 HTML·CSS·scripts·assets만 Pages 아티팩트로 만듭니다. 개발 기록·테스트·문서·로컬 설정은 웹 아티팩트에 포함하지 않습니다. API, 계정, 서버 또는 인증키는 필요하지 않습니다.
+`main`에 push하면 GitHub Actions가 테스트·문법 검사를 수행하고 HTML·CSS·scripts·assets·vendor만 Pages 아티팩트로 만듭니다. 개발 기록·테스트·문서·로컬 설정은 웹 아티팩트에 포함하지 않습니다. API, 계정, 서버 또는 인증키는 필요하지 않습니다.

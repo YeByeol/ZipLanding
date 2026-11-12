@@ -27,6 +27,7 @@
       <a href="#platform">플랫폼</a><a href="#experience">내 기준</a><a href="#comparison">비교</a><a href="#data">데이터</a>
     </nav>
     <a class="header-action" href="#experience">예시로 체험하기<span aria-hidden="true">↗</span></a>
+    <div id="reading-progress" class="reading-progress" role="progressbar" aria-label="페이지 읽은 위치" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"></div>
   </header>
 
   <main id="main">
@@ -42,7 +43,7 @@
         <div id="hero-city" class="city-render hero-city" data-ui>
           <img class="city-poster" src="./assets/city-price.svg" alt="가격에 따라 청록색으로 구분한 가상의 입체 도시 모형" width="1000" height="760" fetchpriority="high">
         </div>
-        <div class="hero-city-bottom"><p>둘러보고, 기준을 세우고, 비교하세요.</p><a class="round-link" href="#platform" aria-label="플랫폼 소개로 이동"><span aria-hidden="true">↓</span></a></div>
+        <div class="hero-scene-info" data-ui><p id="hero-selection">장소 A · 월세 35만 · 내 기준 37점</p><div class="scene-tools" data-scene="hero" role="group" aria-label="첫 도시 모형 시점"><button type="button" data-scene-action="left" aria-label="도시 왼쪽으로 회전" disabled>↶</button><button type="button" data-scene-action="right" aria-label="도시 오른쪽으로 회전" disabled>↷</button><button type="button" data-scene-action="zoom-in" aria-label="도시 모형 확대" disabled>+</button><button type="button" data-scene-action="zoom-out" aria-label="도시 모형 축소" disabled>−</button><button type="button" data-scene-action="reset" disabled>처음 시점</button></div></div><div class="hero-city-bottom"><p id="hero-scene-status">스크롤하며 도시를 살펴보세요.</p><a class="round-link" href="#platform" aria-label="플랫폼 소개로 이동"><span aria-hidden="true">↓</span></a></div>
       </div>
     </section>
 
@@ -54,7 +55,7 @@
       <div class="platform-display" data-ui data-reveal>
         <div class="platform-top"><span class="map-name">ZIP 예시 도시</span><div class="segmented" role="group" aria-label="도시를 보는 주제"><button type="button" disabled data-needs-js data-mode="price" aria-pressed="true">가격</button><button type="button" disabled data-needs-js data-mode="score" aria-pressed="false">내 기준</button><button type="button" disabled data-needs-js data-mode="value" aria-pressed="false">가격 대비</button><button type="button" disabled data-needs-js data-mode="terrain" aria-pressed="false">지형</button></div><span class="map-dimension">3D 모형</span></div>
         <div id="platform-city" class="city-render platform-city"><img class="city-poster" src="./assets/city-price.svg" alt="청록색으로 가격 수준을 나타낸 가상 도시 모형" width="1000" height="760" loading="lazy"></div>
-        <div class="platform-bottom"><p id="mode-description">청록색이 진할수록 면적당 월 환산 가격이 높습니다.</p><div id="platform-legend" class="map-legend" aria-label="지도 색 범례"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>높음</span></div></div>
+        <div class="scene-interaction-bar"><span id="platform-scene-status">드래그로 돌리고, 건물을 눌러보세요.</span><div class="scene-tools" data-scene="platform" role="group" aria-label="플랫폼 지도 시점"><button type="button" data-scene-action="left" aria-label="지도 왼쪽으로 회전" disabled>↶</button><button type="button" data-scene-action="right" aria-label="지도 오른쪽으로 회전" disabled>↷</button><button type="button" data-scene-action="zoom-in" aria-label="도시 모형 확대" disabled>+</button><button type="button" data-scene-action="zoom-out" aria-label="도시 모형 축소" disabled>−</button><button type="button" data-scene-action="reset" disabled>처음 시점</button></div></div><div class="platform-bottom"><p id="mode-description">청록색이 진할수록 면적당 월 환산 가격이 높습니다.</p><div id="platform-legend" class="map-legend" aria-label="지도 색 범례"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>높음</span></div></div>
       </div>
       <p class="demo-disclosure">설명용 가상 도시와 예시 값입니다. 실제 지역의 건물·가격을 나타내지 않습니다.</p>
     </section>
@@ -62,13 +63,13 @@
     <section class="experience section-pad" id="experience" aria-labelledby="experience-title">
       <div class="section-heading">
         <h2 id="experience-title" data-reveal>기준을 바꾸면<br>도시도 달라집니다</h2>
-        <div class="section-lead" data-reveal><p>좋은 장소의 기준은 사람마다 다르니까.</p><p>완만한 경사, 낮은 고도, 건물 연식.<br>중요도를 조절하고 어떤 장소가 남는지 살펴보세요.</p></div>
+        <div class="section-lead" data-reveal><p>좋은 장소의 기준은 사람마다 다르니까.</p><p>완만한 경사, 낮은 고도, 건물 연식.<br>중요도를 조절하고 어떤 장소가 가까워지는지 살펴보세요.</p></div>
       </div>
-      <div class="experience-stage" data-ui>
-        <div class="experience-map" data-reveal>
+      <div class="experience-stage">
+        <div class="experience-map" data-ui data-reveal>
           <div class="experience-map-header"><span>내 기준으로 보는 도시</span><span id="map-state-label">모두 같은 중요도</span></div>
           <div id="experience-city" class="city-render"><img class="city-poster" src="./assets/city-score.svg" alt="조건에 따른 점수를 보라색으로 구분한 예시 도시" width="1000" height="760" loading="lazy"></div>
-          <div class="map-key"><div class="score-legend"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>내 기준에 가까움</span></div><span>A·B·C를 눌러 살펴보세요</span></div>
+          <div class="scene-interaction-bar"><span id="experience-scene-status">드래그로 회전 · 건물을 눌러 선택</span><div class="scene-tools" data-scene="experience" role="group" aria-label="내 기준 지도 시점"><button type="button" data-scene-action="left" aria-label="내 기준 지도 왼쪽으로 회전" disabled>↶</button><button type="button" data-scene-action="right" aria-label="내 기준 지도 오른쪽으로 회전" disabled>↷</button><button type="button" data-scene-action="zoom-in" aria-label="도시 모형 확대" disabled>+</button><button type="button" data-scene-action="zoom-out" aria-label="도시 모형 축소" disabled>−</button><button type="button" data-scene-action="reset" disabled>처음 시점</button></div></div><div class="map-key"><div class="score-legend"><span>낮음</span><i></i><i></i><i></i><i></i><i></i><span>내 기준에 가까움</span></div><span>A·B·C를 눌러 살펴보세요</span></div>
         </div>
         <div class="criteria-panel" data-reveal>
           <div class="criteria-heading"><h3>나의 중요도</h3><button type="button" disabled data-needs-js class="text-button" id="reset-weights">같게 맞추기</button></div>
@@ -78,7 +79,7 @@
           <p class="weight-note" id="weights-note">가격은 점수에 넣지 않습니다.</p>
           <div class="candidate-picker" role="group" aria-label="살펴볼 예시 장소"><button type="button" disabled data-needs-js data-select="a" aria-pressed="true">장소 A</button><button type="button" disabled data-needs-js data-select="b" aria-pressed="false">장소 B</button><button type="button" disabled data-needs-js data-select="c" aria-pressed="false">장소 C</button></div>
           <details class="all-places"><summary>예시 건물 전체 보기</summary><div id="all-buildings" role="group" aria-label="전체 예시 건물 선택"></div></details>
-          <div id="selected-summary" class="selected-summary"><p>장소 A</p><strong>37<small>점 / 내 기준</small></strong><span>보증금 1,000만 · 월세 35만 · 23㎡</span><span>경사 1% · 고도 90m · 1995년</span></div>
+          <div id="selected-summary" class="selected-summary" data-ui><p>장소 A</p><strong>37<small>점 / 내 기준</small></strong><span>보증금 1,000만 · 월세 35만 · 23㎡</span><span>경사 1% · 고도 90m · 1995년</span></div>
           <button type="button" disabled data-needs-js class="button button-light" id="save-selected">선택한 장소 담기</button>
         </div>
       </div>

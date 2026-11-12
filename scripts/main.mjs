@@ -1,5 +1,7 @@
 import { BUILDINGS, normalizedWeights, scoreBuilding, monthlyUnit, comparisonFor, parseState, serializeState } from './demo.mjs';
-import { mountCity, PALETTES } from './city.mjs';
+import { PALETTES } from './city.mjs';
+import { mountScene3D } from './scene3d.mjs';
+import { mountMotion } from './motion.mjs';
 
 const $ = selector => document.querySelector(selector);
 const keys = ['slope', 'elevation', 'age'];
@@ -25,11 +27,27 @@ function select(id) {
   render();
 }
 
+function sceneStatus(name, status) {
+  document.querySelectorAll(`[data-scene="${name}"] button`).forEach(button => { button.disabled = status !== 'webgl'; });
+  const caption = $(`#${name}-scene-status`);
+  if (caption) caption.textContent = status === 'webgl' ? '드래그로 회전 · 건물을 눌러 선택' : '건물과 조건을 고정 모형으로 살펴보세요.';
+}
+
 const cities = [
-  { owner: mountCity($('#hero-city'), { buildings: BUILDINGS }), mode: 'price' },
-  { owner: mountCity($('#platform-city'), { buildings: BUILDINGS, interactive: true, onSelect: select }), mode: null },
-  { owner: mountCity($('#experience-city'), { buildings: BUILDINGS, interactive: true, onSelect: select }), mode: 'score' },
+  { name:'hero', element:$('#hero-city'), owner:mountScene3D($('#hero-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'hero', onStatus:s=>sceneStatus('hero',s) }), mode:'price' },
+  { name:'platform', element:$('#platform-city'), owner:mountScene3D($('#platform-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'platform', onStatus:s=>sceneStatus('platform',s) }), mode:null },
+  { name:'experience', element:$('#experience-city'), owner:mountScene3D($('#experience-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'experience', onStatus:s=>sceneStatus('experience',s) }), mode:'score' },
 ];
+for (const group of document.querySelectorAll('[data-scene]')) group.addEventListener('click', event => {
+  const button = event.target.closest('[data-scene-action]');
+  if (!button || button.disabled) return;
+  const owner = cities.find(city => city.name === group.dataset.scene)?.owner;
+  if (button.dataset.sceneAction === 'reset') owner?.resetView();
+  else if (button.dataset.sceneAction === 'zoom-in') owner?.zoom(.15);
+  else if (button.dataset.sceneAction === 'zoom-out') owner?.zoom(-.15);
+  else owner?.rotate(button.dataset.sceneAction === 'left' ? -.3 : .3);
+});
+const motion = mountMotion({ scenes:cities, header:$('.site-header'), progress:$('#reading-progress') });
 
 // Native buttons mirror every painted building, including the missing-data example.
 for (const building of BUILDINGS) {
@@ -65,6 +83,7 @@ function renderSelection() {
     const item = document.createElement('span'); item.textContent = text; conditions.append(item);
   }
   summary.append(name, score, money, conditions);
+  $('#hero-selection').textContent = `${placeName(building)} · 월세 ${format(building.rent)}만 · ${result.score === null ? '자료 없음' : `내 기준 ${format(result.score)}점`}`;
   if (result.missing.length) { const note = document.createElement('span'); const labels = { slope: '경사', elevation: '고도', age: '연식' }; note.textContent = `자료 없음: ${result.missing.map(key => labels[key]).join(', ')}. 점수 계산에서 제외합니다.`; summary.append(note); }
   const saved = state.saved.includes(state.selected);
   $('#save-selected').disabled = saved;
@@ -192,7 +211,7 @@ $('#share-state').addEventListener('click', async () => {
   }
 });
 $('#close-share').addEventListener('click', () => { $('#share-fallback').hidden = true; $('#share-state').focus(); });
-window.addEventListener('pagehide', () => { clearTimeout(toastTimer); clearTimeout(announceTimer); });
+window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); cities.forEach(city => city.owner.destroy()); } });
 document.querySelectorAll('[data-needs-js]').forEach(control => { control.disabled = false; });
 render({syncInputs:true});
 document.body.classList.add('has-demo');

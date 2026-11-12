@@ -1,11 +1,11 @@
 {
   "name": "zip-landing",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "private": true,
   "type": "module",
   "scripts": {
     "dev": "python3 -m http.server 4178 --bind 127.0.0.1",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check scripts/main.mjs && node --check scripts/city.mjs && node --check scripts/demo.mjs"
+    "check": "node --check scripts/main.mjs && node --check scripts/city.mjs && node --check scripts/demo.mjs && node --check scripts/scene3d.mjs && node --check scripts/scene-model.mjs && node --check scripts/motion.mjs"
   }
 }

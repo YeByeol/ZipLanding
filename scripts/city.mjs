@@ -18,7 +18,7 @@ const score = (building, weights) => {
   const result = scoreBuilding(building, weights);
   return typeof result === 'number' ? result : result.score;
 };
-function colorFor(building, buildings, mode, weights) {
+export function colorFor(building, buildings, mode, weights) {
   if (mode === 'terrain') return Number.isFinite(building.slope) ? PALETTES.terrain[Math.min(4, Math.floor(building.slope / 2))] : '#d9d6cf';
   if (mode === 'score') {
     const value = score(building, weights);
