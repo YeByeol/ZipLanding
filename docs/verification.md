@@ -270,3 +270,31 @@ v2.4 공개 배포 확인:
 - 소스 `0db41154c359341e160f6b1f618db3e6e5bd3aa3`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43185482557 — completed / success.
 - https://yebyeol.github.io/ZipLanding/ 공개 전체 궤적 **14/14**, 연결선·가격축·탐색·마무리 기능 **20/20** 통과.1366×768 조건 중간p=.24의 세 수치 opacity1과320×640 마무리의 전체 도시도 실제 화면으로 다시 확인했다. browser errors0, overflow0.
 - 새 framing module을 포함한 HTML·CSS·앱·Three·브랜드/그림/글꼴 **23개 HTTP200/로컬 배포 소스와 바이트 일치**.
+
+## v3.0 큰 도시와 editorial HUD, 공통 부드러운 진행
+
+사용자는 오브제를 작게 만드는 것이 아니라 큰 이동을 유지하면서 설명 텍스트·HUD·인터페이스를 전문가가 설계한 수준으로 재구성하도록 정정했다. 이어 모든 이동·전환·효과가 부드럽게 이어져야 한다고 명시했다. 따라서 v2.4의 전체 모형 fit을 현재 소개의 연출 기준에서 제외했다. 위 v2.4 검증은 그 소스에 대한 과거 기록이다.
+
+설계: `superpowers/specs/2026-11-12-zip-editorial-hud.md`.
+
+- 공식 Apple PROLED XDR·Vision Pro, Linear, Nothing 제품 화면을 실제 브라우저로 조사했다. 큰 제품 오브제와 절제된 설명 위계, 명확한 숫자·단위·식별 관계를 참고했고 자산은 복제하지 않았다. Taste v2 One motif(seed1250306957), 기존 palette/type 유지. ZIP의 Z와 같은 도시의 다른 단면을 읽는 행위를 구도의 근거로 삼았다.
+- 누적 film CSS를 `styles/film.css`로 교체했다. 왼쪽 읽기 영역·큰 핵심 가격·조건 측정값·중요도 막대·독립 점수 표시·완전한 semantic 비교표·같은0축 단가 그래프·결측/계획 표시·마무리 행동을8개 다른 구성으로 설계했다. 작은 화면에서는 중요도를3열로 재구성하고 범례와 native 선택기를 같은 탐색 영역에 둔다.
+- 실제 canvas는 장면 전체를 채우며 위치·buffer를 장마다 변경하지 않는다. authored zoom은 desktop1.22→3.4, phone1.403→3.91로 복원했다. 대상 건물 높이 변화는 약2.81배다. off-axis projection은 확대를 취소하지 않고 관심 위치를 desktop오른쪽/mobile중앙으로 배치한다. 의도적인 화면 가장자리 crop과 과거 작은 canvas 내부의 갑작스런 절단을 구분한다.
+-90ms 공통 clock이 카메라·DOM 문구/opacity·점수·막대·색·연결선을 같은 snapshot으로 갱신한다. 전환 half-window는.045이며 quintic 보간을 유지한다. 정지 시 정확한 target으로 수렴하고 idle RAF는0이다. 초기·명시적 장면 선택·움직임 줄이기·낮은 화면·hidden 전환은 즉시 적용한다.
+- 공통 clock이 마지막 native scroll 이후 장 경계를 넘을 때 헤더 메뉴가 이전 장에 머무르는 실제 오류를 재현했다. logical phase 변경 뒤 기존 motion scheduler를 한 번 호출해 메뉴를 동기화했다. navigation 규칙이나 별도 animation loop를 만들지 않았다.
+- 표지의 실제 CSS 반경을 readonly projection API로 제공한다. 선은 실제 원 바깥에서 시작하고, 가려진/화면 밖/읽기 차폐 영역의 출발점은 숨긴다. 추가 ring을 없애 표지 글자 위의 중복 원과 공중에 뜬 표시를 제거했다. 비교표·그래프의 실제 식별 열과 일반 placard의 가까운 가장자리에 각각 연결한다.
+- `styles/demo-polish.css`는 실제 체험창 내부에만 적용한다. Desktop은 도시와 중요도/선택 조작을 함께 보고, mobile은 같은 내용을 한 열로 읽는다. 외부 dialog는 overflow:clip, 내부 body만 scroll해 닫기 헤더가 밀려나지 않게 한다. 수동 camera·선택·저장·빈 상태·공유 URL은 기존 동작을 유지한다.
+
+검증 결과:
+
+- Node **63/63**, 전체 syntax·SVG export·diff 검사 통과. 실제 production geometry/전환 경계의 카메라 연속성, 공통 clock 수렴/역전/정리, phase callback과 batched refresh를 포함한다.
+- 실제 cinematic engine **21/21**:8개 desktop/phone pose, 동기 draw, 역방향·빠른 seek, fit 생략, 수동 경험 유지. 실제 radius **3/3**: DPR2 CSSpx projection/readonly paint/SVG circle bbox 일치.
+- 실제 공통 clock **6/6**:91개 frame(55개 이동 frame)의 DOM alpha·score·bar·legend와 GPU camera가 같은 filmProgress에 일치, 정확한 정지·idle RAF0·native 선택기 즉시 적용·reduced bypass. 헤더 동기화는 cold browser에서 단 한 번의 scroll 이후 추가 입력 없이 criteria/aria-current 일치로 별도 재확인했다.
+- 실제 전체 궤적 **14/14**:8개 hold의 그래픽 변화,7개 경계의 작은 역방향 반복, 같은 최종 진행값의 물리 상태 동일성, 고정 canvas/buffer, 실제 계산 필드, 시연/방문자 상태 분리. 필터가 정확히 정지한 뒤 읽고, 이전 QA의.035 상수를 현재 TRANSITION_WINDOW로 대체했다.
+- 실제 선택 체험 **15/15**: 키보드 중요도, X 누락, empty recovery, native 내부 이동, 공유 fallback, dialog focus trap/복귀, 정확한 영화 위치 복귀와 deep link 유지.
+-1440×1000·1366×768·768×1024·390×844·320×640의8개 hold **40개**를 실제 화면으로 확인했다. 읽기 텍스트/조작부의 stage 밖 잘림과 document 가로 overflow는0이다. 짧은 desktop 비교표와 copy 간격을 추가 확보했다. 별도 체험창1440·390·320에서는 모든 측정 조작부44px 이상, 외부 dialog scrollTop0을 확인했다.
+- 실제 fallback **10/10**: SVG 연결 좌표/차폐 판정, scroll 없는 resize, lowheight/reduced 링크 숨김, 실제 WebGL context loss 후 같은 DOM의 갱신, script 차단 시8개 일반 흐름과 전체 비교 사실/단가 비율/비활성 선택기 유지. 설명 영역에 가려진 SVG A의 선이 없음을 정상 기대값으로 판정하고, K/V/X의 보이는 실제 투영은 별도 확인했다.
+- 독립 시각 검토가 발견한 phone 공중 ring·desktop 점 단위 이탈·closing 문구 대비를 수정했다. 새 cold browser의320 criteria/closing·1366 criteria에서 남은 중대 시각 문제 없음으로 마쳤다. 독립 통합 검토에서도 자산 복사/참조·ID/ARIA 연결·상태 분리·대체 표시의 새 blocker가 없었다.
+- Taste source lint **0 FAIL /0 WARN**. 실제 inspector **0 FAIL**, no-footage 경고1개: 사용자가 요청한 실제3D motion이 주 시각 자산이므로 별도 stock film을 넣지 않았다. few-pictures는 같은 사용자 의도에 따른 예외이며, pinned-over-picture는 전체 canvas rect와 읽기 레이어의 교차를 검출하는 한계로 예외 처리했다. 실제 차폐·대비·겹침은40개 장면 화면과 독립 검토로 확인했다. 이 예외를 inspector의 무조건 통과로 숨기지 않는다.
+
+내부 시각 재검토는 구도·타이포·정보 위계·역방향 동작을 중심으로 진행했다. 외부 수상/공인 디자인 평점이나 물리 기기 FPS·배터리·실제 Safari 주소 표시줄/nonzero safe-area 검증을 주장하지 않는다. 외부 사진·영상·새 글꼴·새 런타임 의존성은 추가하지 않았다.

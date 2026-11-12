@@ -1,3 +1,4 @@
+import {TRANSITION_WINDOW} from '../scripts/story-timeline.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { BUILDINGS, scoreBuilding, monthlyUnit } from '../scripts/demo.mjs';
@@ -15,7 +16,7 @@ test('film demonstrates equal to80/10/10 using actual scores and immutable price
     assert.equal(final.cards[i].score, scoreBuilding(BUILDINGS[i],final.weights).score);
     assert.equal(start.cards[i].unit, final.cards[i].unit);
   }
-  const midway = model.filmSnapshot((2.5/7+.035)+(.5/7-.035)*.4);
+  const midway = model.filmSnapshot((2.5/7+TRANSITION_WINDOW)+(1/7-2*TRANSITION_WINDOW)*.2);
   assert.ok(midway.weights.slope>100/3 && midway.weights.slope<80);
   assert.equal(midway.cards[0].score,scoreBuilding(BUILDINGS[0],midway.weights).score);
   assert.equal(final.fields.unit,'1.70');
@@ -53,14 +54,17 @@ test('price bars compare A and the two actual peers on one zero-based axis', () 
   assert.deepEqual(model.filmSnapshot(0).priceBars,snapshot.priceBars,'preferences cannot change money');
 });
 
-test('full-city framing follows the same eight-chapter timeline and stays fixed for reduced motion',()=>{
- const values=[.84,.9,1,.9,.88,.94,.97,.84];
- for(let i=0;i<values.length;i++)assert.deepEqual(model.filmSnapshot(i/7).frame.fit,{padding:20,occupancy:values[i]});
+test('cinematic film preserves authored large zooms and constant viewport composition without global fit',()=>{
+ const zooms=[1.22,1.85,3.4,1.55,1.65,1.5,3,1.22];
+ for(let i=0;i<8;i++){
+  const frame=model.filmSnapshot(i/7).frame;
+  assert.equal(frame.zoom,zooms[i]);assert.equal(frame.fit,undefined);
+  assert.deepEqual(frame.composition,{desktop:{x:.72,y:.52},mobile:{x:.5,y:.43},mobileScale:1.15});
+ }
  for(let i=0;i<=100;i++){
-  const progress=i/100,a=model.filmSnapshot(progress,'discover').frame.fit,b=model.filmSnapshot(progress,'closing').frame.fit;
-  assert.deepEqual(a,b);assert.ok(a.occupancy>=.84&&a.occupancy<=1);
-  assert.deepEqual(model.filmSnapshot(progress,undefined,{reduced:true}).frame.fit,{padding:20,occupancy:.84});
-  assert.deepEqual(model.filmSnapshot(progress,undefined,{complete:true}).frame.fit,{padding:20,occupancy:.84});
+  const p=i/100,a=model.filmSnapshot(p,'discover').frame,b=model.filmSnapshot(p,'closing').frame;
+  assert.deepEqual(a,b);assert.equal(a.fit,undefined);
+  for(const options of [{reduced:true},{complete:true}]){const frame=model.filmSnapshot(p,undefined,options).frame;assert.equal(frame.zoom,1.22);assert.deepEqual(frame.target,{x:0,y:.28,z:0});}
  }
 });
 
@@ -68,7 +72,7 @@ test('all eight chapters have deterministic scroll beats and completed accessibl
   assert.equal(typeof model.filmSnapshot,'function');
   const phases=['discover','price','conditions','criteria','comparison','value','evidence','closing'];
   for (let i=0;i<8;i++) {
-    const start=Math.max(0,(i-.5)/7+.035), width=i===0?.5/7-.035:1/7-.07;
+    const start=Math.max(0,(i-.5)/7+TRANSITION_WINDOW), width=i===0?.5/7-TRANSITION_WINDOW:1/7-2*TRANSITION_WINDOW;
     const a=model.filmSnapshot(start+width*.05), b=model.filmSnapshot(start+width*.42);
     assert.notDeepEqual(a.beats[phases[i]],b.beats[phases[i]],phases[i]+' has actual scroll-authored graphics');
     const held=model.filmSnapshot(start+width*.7);
@@ -80,18 +84,21 @@ test('all eight chapters have deterministic scroll beats and completed accessibl
     const snapshot=model.filmSnapshot(3/7,'criteria',options);
     assert.ok(Object.values(snapshot.beats).flat().every(v=>v===1));
     assert.deepEqual(snapshot.weights,{slope:80,elevation:10,age:10});
-    assert.equal(snapshot.frame.zoom,1.05);
+    assert.equal(snapshot.frame.zoom,1.22);
     assert.equal(snapshot.fields.rent,'35');
   }
 });
 
 test('automatic criteria colors stay continuous across discrete interactive score bins',async()=>{
  const {colorFor,colorFrameForTransition}=await import('../scripts/city.mjs');
- const b=BUILDINGS[1],before=model.filmSnapshot(.409889),after=model.filmSnapshot(.409891);
+ const b=BUILDINGS[1];
+ let lo=2.5/7+TRANSITION_WINDOW,hi=3/7;
+ for(let n=0;n<40;n++){const p=(lo+hi)/2;if(model.filmSnapshot(p).cards[1].score<60)lo=p;else hi=p;}
+ const p=(lo+hi)/2,before=model.filmSnapshot(p-1e-7),after=model.filmSnapshot(p+1e-7);
  assert.notEqual(colorFor(b,BUILDINGS,'score',before.weights),colorFor(b,BUILDINGS,'score',after.weights),'the example crosses a real20-point bin');
  const a=colorFrameForTransition(b,BUILDINGS,before.frame.colorBlend,before.weights).color;
  const z=colorFrameForTransition(b,BUILDINGS,after.frame.colorBlend,after.weights).color;
  const rgb=hex=>hex.slice(1).match(/../g).map(value=>parseInt(value,16));
  assert.ok(rgb(a).every((value,index)=>Math.abs(value-rgb(z)[index])<=1),'film colors cannot jump at interactive bin boundaries');
- assert.deepEqual(model.filmSnapshot(.409889,'closing').frame,before.frame);
+ assert.deepEqual(model.filmSnapshot(p-1e-7,'closing').frame,before.frame);
 });

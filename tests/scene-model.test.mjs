@@ -1,3 +1,4 @@
+import {TRANSITION_WINDOW} from '../scripts/story-timeline.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
@@ -59,7 +60,7 @@ test('named views fit the city or focus the requested building without mutating 
 
 
 test('eight film camera poses hold and transition smoothly with separate A and X targets', () => {
-  const poses=[[1.05,.72,.68],[1.2,.68,.70],[2.6,.62,.80],[1.05,.72,.76],[1,.62,.72],[1.05,.56,.92],[1.9,.62,.80],[1.05,.72,.68]];
+  const poses=[[1.22,.72,.68],[1.85,.64,.72],[3.4,.52,.76],[1.55,.92,.72],[1.65,.58,.84],[1.5,.42,1],[3,.85,.76],[1.22,.72,.68]];
   const frames=poses.map((_,i)=>model.presentationForProgress(i/7));
   poses.forEach(([zoom,yaw,pitch],i)=>{assert.equal(frames[i].zoom,zoom);assert.equal(frames[i].yaw,yaw);assert.equal(frames[i].pitch,pitch);});
   assert.ok(Math.abs(frames[2].target.x+2.975)<1e-12);assert.ok(Math.abs(frames[6].target.x-2.975)<1e-12);
@@ -74,7 +75,7 @@ test('eight film camera poses hold and transition smoothly with separate A and X
 
 test('cinematic camera rejects invalid progress and data and reduced motion stays wide', () => {
   assert.equal(typeof model.presentationForProgress, 'function');
-  const wide = { yaw: .72, pitch: .68, zoom: 1.05, target: { x: 0, y: .28, z: 0 } };
+  const wide = { yaw: .72, pitch: .68, zoom: 1.22, target: { x: 0, y: .28, z: 0 } };
   for (const progress of [-1, NaN, Infinity, undefined]) assert.deepEqual(model.presentationForProgress(progress), wide);
   for (const progress of [0, .3, .7, 1]) assert.deepEqual(model.presentationForProgress(progress, { x: 5, y: 3, height: 64 }, { reduced: true }), wide);
   for (const building of [undefined, null, {}, { x: NaN, y: Infinity, height: -10 }]) {
@@ -93,4 +94,14 @@ test('presentation trust boundary bounds cinematic zoom and city target without 
   assert.equal(invalid.zoom, 1);
   assert.equal(model.clampPresentation({ zoom: .1 }).zoom, .7);
   assert.equal(model.clampZoom(4.2), 1.6);
+});
+
+
+test('large camera movements remain C2 at all timeline seams with exact reverse/seek frames',()=>{
+ const scalars=frame=>[frame.yaw,frame.pitch,frame.zoom,frame.target.x,frame.target.y,frame.target.z];
+ for(let i=0;i<7;i++)for(const edge of [(i+.5)/7-TRANSITION_WINDOW,(i+.5)/7+TRANSITION_WINDOW]){
+  const h=1e-6,a=scalars(model.presentationForProgress(edge-h)),b=scalars(model.presentationForProgress(edge)),c=scalars(model.presentationForProgress(edge+h));
+  for(let k=0;k<a.length;k++){assert.ok(Math.abs(c[k]-a[k])/(2*h)<.01,'seam velocity settles to zero');assert.ok(Math.abs(c[k]-2*b[k]+a[k])/(h*h)<2,'seam acceleration settles to zero');}
+ }
+ for(const p of [0,.12,.31,.44,.58,.71,.83,.97,1]){const frame=model.presentationForProgress(p);model.presentationForProgress(1-p);assert.deepEqual(model.presentationForProgress(p),frame);}
 });

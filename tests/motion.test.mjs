@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { sectionProgress, readingProgress } from '../scripts/motion.mjs';
+import { sectionProgress, readingProgress, mountMotion } from '../scripts/motion.mjs';
 
 test('section progress follows the entire viewport crossing and clamps its ends', () => {
   assert.equal(sectionProgress(800, 400, 800), 0);
@@ -136,4 +136,23 @@ test('motion batches events, stays idle, honors reduced motion and cleans up', a
       else globalThis[key] = value;
     }
   }
+});
+
+test('refresh reuses batched header navigation after a phase change with no new scroll event',()=>{
+ const saved={window:globalThis.window,document:globalThis.document};
+ const frames=new Map();let id=0;
+ const window=Object.assign(new EventTarget(),{innerHeight:800,scrollY:0,matchMedia:()=>Object.assign(new EventTarget(),{matches:false}),requestAnimationFrame:fn=>{frames.set(++id,fn);return id;},cancelAnimationFrame:i=>frames.delete(i)});
+ const link=phase=>{const attrs=new Map([['href','#story-'+phase]]);return{getAttribute:k=>attrs.get(k),setAttribute:(k,v)=>attrs.set(k,v),removeAttribute:k=>attrs.delete(k)};};
+ const conditions=link('conditions'),criteria=link('criteria');
+ const film={dataset:{storyEnhanced:'true',storyPhase:'conditions'},querySelectorAll:()=>['discover','price','conditions','criteria','comparison','value','evidence','closing'].map(storyStep=>({dataset:{storyStep}}))};
+ const document=Object.assign(new EventTarget(),{hidden:false,body:{classList:{contains:()=>false,add(){},remove(){}}},documentElement:{scrollHeight:8000},getElementById:key=>key==='platform'?film:{getBoundingClientRect:()=>({top:1000})}});
+ globalThis.window=window;globalThis.document=document;
+ const header={querySelectorAll:()=>[conditions,criteria],classList:{toggle(){}}};let motion;
+ const flush=()=>{const callbacks=[...frames.values()];frames.clear();callbacks.forEach(fn=>fn());};
+ try{
+  motion=mountMotion({header});flush();assert.equal(conditions.getAttribute('aria-current'),'location');
+  assert.equal(typeof motion.refresh,'function');film.dataset.storyPhase='criteria';motion.refresh();motion.refresh();assert.equal(frames.size,1);
+  flush();assert.equal(criteria.getAttribute('aria-current'),'location');assert.equal(conditions.getAttribute('aria-current'),undefined);assert.equal(frames.size,0,'a phase refresh returns to idle');
+  motion.destroy();motion.refresh();assert.equal(frames.size,0,'destroyed navigation cannot schedule future work');
+ }finally{motion?.destroy();for(const[k,v]of Object.entries(saved)){if(v===undefined)delete globalThis[k];else globalThis[k]=v;}}
 });

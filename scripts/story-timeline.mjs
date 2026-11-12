@@ -1,7 +1,8 @@
 export const PHASES = Object.freeze(['discover','price','conditions','criteria','comparison','value','evidence','closing']);
 export const MODES = Object.freeze({ discover:'price',price:'price',conditions:'terrain',criteria:'score',comparison:'score',value:'price',evidence:'score',closing:'price' });
 const BOUNDARIES = Array.from({length:7},(_,i)=>(i+.5)/7);
-const WINDOW = .035;
+export const TRANSITION_WINDOW = .045;
+const WINDOW = TRANSITION_WINDOW;
 const DEADBAND = .006;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return clamp(t * t * t * (t * (t * 6 - 15) + 10)); };

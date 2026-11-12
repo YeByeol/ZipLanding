@@ -44,6 +44,7 @@ function scrollFilmTo(hash, behavior = 'smooth') {
   if (!step) return false;
   window.scrollTo({ top: window.scrollY + step.getBoundingClientRect().top,
     behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'instant' : behavior });
+  if(behavior==='instant')story.updateScroll({reduced:matchMedia('(prefers-reduced-motion: reduce)').matches,immediate:true});
   return true;
 }
 
@@ -75,7 +76,6 @@ $('#story-chapter-select')?.addEventListener('change',event=>{
   const hash='#story-'+event.target.value;
   if(scrollFilmTo(hash,'instant')){
     history.pushState(null,'',hash);
-    story.updateScroll({reduced:matchMedia('(prefers-reduced-motion: reduce)').matches});
   }
 });
 
@@ -98,9 +98,10 @@ function sceneStatus(name, status) {
   if (caption) caption.textContent = status === 'webgl' ? '드래그로 회전 · 건물을 눌러 선택' : '건물과 조건을 고정 모형으로 살펴보세요.';
 }
 
+let motion;
 const storyElement = $('#story-city');
 const storyOwner = mountScene3D(storyElement, { buildings:BUILDINGS, interactive:false, scene:'hero' });
-const story = mountStory({ root:$('#platform'), element:storyElement, owner:storyOwner });
+const story = mountStory({ root:$('#platform'), element:storyElement, owner:storyOwner, onPhaseChange:()=>motion?.refresh() });
 const cities = [
   { name:'experience', element:$('#experience-city'), owner:mountScene3D($('#experience-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'experience', onStatus:s=>sceneStatus('experience',s) }) },
 ];
@@ -114,7 +115,7 @@ for (const group of document.querySelectorAll('[data-scene]')) group.addEventLis
   else if (button.dataset.sceneAction === 'zoom-out') owner?.zoom(-.15);
   else owner?.rotate(button.dataset.sceneAction === 'left' ? -.3 : .3);
 });
-const motion = mountMotion({ header:$('.site-header'), progress:$('#reading-progress'), onUpdate: value => story.updateScroll(value) });
+motion = mountMotion({ header:$('.site-header'), progress:$('#reading-progress'), onUpdate: value => story.updateScroll(value) });
 
 // Native buttons mirror every painted building, including the missing-data example.
 for (const building of BUILDINGS) {

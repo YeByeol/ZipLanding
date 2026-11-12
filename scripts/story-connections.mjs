@@ -5,11 +5,16 @@ const point=value=>value&&Number.isFinite(value.x)&&Number.isFinite(value.y);
 export function connectionPath(from,to){
   if(!point(from)||!point(to))return null;
   const n=value=>Math.round(value*100)/100;
-  const gap=to.y-from.y;
-  return `M${n(from.x)},${n(from.y)} C${n(from.x)},${n(from.y+gap*.45)} ${n(to.x)},${n(to.y-gap*.35)} ${n(to.x)},${n(to.y)}`;
+  const dx=to.x-from.x,dy=to.y-from.y;
+  return Math.abs(dx)>Math.abs(dy)
+    ? `M${n(from.x)},${n(from.y)} C${n(from.x+dx*.45)},${n(from.y)} ${n(to.x-dx*.2)},${n(to.y)} ${n(to.x)},${n(to.y)}`
+    : `M${n(from.x)},${n(from.y)} C${n(from.x)},${n(from.y+dy*.45)} ${n(to.x)},${n(to.y-dy*.35)} ${n(to.x)},${n(to.y)}`;
 }
 
 export const isCovered=(source,rects)=>rects.some(rect=>source.x>=rect.left&&source.x<=rect.right&&source.y>=rect.top&&source.y<=rect.bottom);
+
+// The opaque part of the reading scrim obscures markers even without a paper panel.
+export const inCityReadingWindow=(source,{width,height})=>point(source)&&width>0&&height>0&&(width<=1000?source.y>=height*.28:source.x>=width*.34);
 
 export function mountStoryConnections({root,owner}){
   const layer=root?.querySelector('#story-connections');
@@ -49,15 +54,20 @@ export function mountStoryConnections({root,owner}){
       if(!anchor?.visible||!rect.width||!rect.height)continue;
       const source={x:art.left+anchor.x,y:art.top+anchor.y};
       if(isCovered(source,blockers))continue;
+      if(!inCityReadingWindow({x:source.x-box.left,y:source.y-box.top},box))continue;
       const paper=target.closest('[data-film-occluder]')?.getBoundingClientRect();
-      const end={x:rect.left+rect.width/2-box.left,y:(paper?.top??rect.top)-box.top-5};
+      const table=target.closest('table'),chart=target.closest('.film-price-chart');
+      const side=paper&&!table&&!chart&&source.x>paper.right+24;
+      const end=side?{x:paper.right-box.left+5,y:rect.top+rect.height/2-box.top}:{x:rect.left+rect.width/2-box.left,y:(paper?.top??rect.top)-box.top-5};
       const start={x:source.x-box.left,y:source.y-box.top};
       if(start.x<0||start.x>box.width||start.y<0||start.y>box.height||end.y<0||end.y>box.height)continue;
       const number=Number(target.dataset.filmLinkBeat||0);
       const beat=number?snapshot.beats[panel.dataset.storyPanel][number-1]:1;
       const alpha=clamp(+panel.style.opacity)*clamp(beat);
       if(!alpha)continue;
-      path.setAttribute('d',connectionPath({x:start.x,y:start.y+12},end));
+      const distance=Math.hypot(end.x-start.x,end.y-start.y),radius=(anchor.radius??12)+3;
+      if(distance<=radius)continue;
+      path.setAttribute('d',connectionPath({x:start.x+(end.x-start.x)*radius/distance,y:start.y+(end.y-start.y)*radius/distance},end));
       path.style.strokeDashoffset=String(1-clamp(beat));
       ring.setAttribute('cx',String(start.x));ring.setAttribute('cy',String(start.y));
       group.style.opacity=String(alpha);group.style.display='';

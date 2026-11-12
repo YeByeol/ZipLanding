@@ -1,0 +1,194 @@
+/* Optional product workspace. Load after styles.css; every rule stays inside the dialog. */
+#demo-dialog button{font:inherit;cursor:pointer;border:0}
+#demo-dialog .button{display:inline-flex;align-items:center;justify-content:center;gap:16px;min-height:46px;padding:12px 18px;border-radius:6px;font-size:14px;line-height:1.4;font-weight:600}
+#demo-dialog .button-dark{background:var(--ink);color:var(--paper)}
+#demo-dialog .button-light{background:var(--paper);color:var(--ink)}
+#demo-dialog .text-link{display:inline-flex;align-items:center;gap:16px;min-height:44px;font-size:14px;line-height:1.5;font-weight:600;text-decoration:underline;text-underline-offset:4px}
+#demo-dialog .city-render{position:relative;isolation:isolate;overflow:hidden}
+#demo-dialog .city-render>svg,#demo-dialog .city-render canvas,#demo-dialog .city-poster{position:absolute;inset:0;width:100%;height:100%}
+#demo-dialog .city-poster{object-fit:contain}
+#demo-dialog{width:min(1440px,calc(100% - 48px));height:calc(100dvh - 48px);max-height:1040px;max-width:none;padding:0;border:0;background:var(--paper);color:var(--ink);overflow:clip}
+#demo-dialog[open]{display:flex;flex-direction:column}
+#demo-dialog .demo-dialog-header{display:flex;align-items:center;justify-content:space-between;gap:24px;flex:none;min-height:72px;padding:12px 28px;background:var(--night);color:var(--white)}
+#demo-dialog .demo-dialog-header h2{font-size:18px;line-height:1.4;letter-spacing:-.02em;font-weight:650}
+#demo-dialog #close-demo{display:flex;align-items:center;justify-content:center;gap:14px;min-width:76px;min-height:44px;padding:8px 12px;background:transparent;color:var(--white);font-size:14px}
+#demo-dialog #close-demo span{font-size:24px;line-height:1}
+#demo-dialog .demo-dialog-body{flex:1;min-height:0;overflow-y:auto;overscroll-behavior:contain;scroll-padding-top:20px;background:var(--paper);color:var(--ink);scrollbar-color:var(--secondary) var(--paper)}
+#demo-dialog .experience,#demo-dialog .comparison{padding:28px;background:var(--paper);color:var(--ink)}
+#demo-dialog .section-heading{display:grid;grid-template-columns:1fr 1fr;gap:20px 40px;align-items:start;max-width:none;margin:0 0 28px;text-align:left}
+#demo-dialog .section-heading h2{font-size:clamp(28px,2.6vw,36px);font-weight:700;line-height:1.15;letter-spacing:-.035em}
+#demo-dialog .section-lead{max-width:54ch;margin:0;font-size:16px;line-height:1.6}
+#demo-dialog .section-note{margin-top:10px;font-size:13px;line-height:1.6;color:var(--secondary)}
+#demo-dialog .experience-stage{display:grid;grid-template-columns:minmax(0,1.25fr) minmax(320px,.75fr);gap:28px;align-items:start;max-width:none;margin:0;padding:0;background:transparent;color:var(--ink)}
+#demo-dialog .experience-map{position:sticky;top:12px;margin:0;padding:20px;background:var(--soft);border-radius:12px}
+#demo-dialog .experience-map:has(.camera-details[open]){position:relative;top:auto}
+#demo-dialog .experience-map-header{display:flex;justify-content:space-between;align-items:center;gap:18px;font-size:14px;line-height:1.5}
+#demo-dialog .experience-map-header>span:first-child{font-weight:650}
+#demo-dialog .experience-map-header>span:last-child{font-size:13px;color:var(--secondary);text-align:right}
+#demo-dialog .segmented{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;max-width:none;margin:18px 0 0}
+#demo-dialog .segmented button{display:flex;align-items:center;justify-content:center;min-height:44px;padding:10px 8px;border-radius:6px;background:transparent;color:var(--ink);font-size:14px;line-height:1.4;white-space:nowrap;transition:background-color .18s,color .18s}
+#demo-dialog .segmented button[aria-pressed=true]{background:var(--ink);color:var(--paper);font-weight:650}
+#demo-dialog .experience-city{height:clamp(260px,calc(100dvh - 520px),420px);margin:0 -20px}
+#demo-dialog .scene-status{position:relative;z-index:2;margin:0;text-align:center;font-size:13px;line-height:1.6;color:var(--secondary)}
+#demo-dialog .platform-bottom{display:flex;justify-content:space-between;align-items:start;gap:18px;margin-top:16px}
+#demo-dialog .platform-bottom>p{max-width:45ch;font-size:13px;line-height:1.65;color:var(--secondary)}
+#demo-dialog .platform-bottom .map-legend{flex:none;gap:3px;font-size:13px}
+#demo-dialog .platform-bottom .map-legend i{width:15px;height:7px}
+#demo-dialog .camera-details{margin-top:12px;padding-top:4px;border:0}
+#demo-dialog .camera-details summary{display:flex;align-items:center;width:fit-content;min-height:44px;font-size:13px;cursor:pointer}
+#demo-dialog .scene-controls{display:flex;flex-wrap:wrap;gap:6px;padding-block:4px 10px}
+#demo-dialog .scene-controls button{min-width:44px;min-height:44px;padding:9px 12px;border-radius:6px;background:var(--mint);color:var(--ink);font-size:13px;line-height:1.4}
+#demo-dialog .scene-controls button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+#demo-dialog .criteria-panel{padding:0;background:transparent}
+#demo-dialog .criteria-heading{display:flex;align-items:center;justify-content:space-between;gap:18px;min-height:44px;margin:0 0 16px}
+#demo-dialog .criteria-heading h3{font-size:21px;line-height:1.3;letter-spacing:-.025em}
+#demo-dialog .text-button{min-height:44px;padding:10px 0;background:transparent;font-size:13px;line-height:1.5;text-underline-offset:4px}
+#demo-dialog .criteria-sliders{display:grid;grid-template-columns:1fr;gap:18px}
+#demo-dialog .criteria-row{padding-bottom:15px;border:0}
+#demo-dialog .criteria-row>div{display:flex;align-items:baseline;justify-content:space-between;gap:16px;font-size:16px;line-height:1.4;font-weight:600}
+#demo-dialog .criteria-row output{font-size:25px;line-height:1.2;letter-spacing:-.03em;color:var(--purple);font-variant-numeric:tabular-nums}
+#demo-dialog .criteria-row input{display:block;width:100%;height:44px;margin:6px 0 0;accent-color:var(--purple);cursor:pointer}
+#demo-dialog .criteria-row p{margin-top:0;font-size:13px;line-height:1.6;color:var(--secondary)}
+#demo-dialog .weight-note{margin:14px 0 0;text-align:left;font-size:13px;line-height:1.6;color:var(--secondary)}
+#demo-dialog .selection-workspace{display:grid;grid-template-columns:1fr;gap:16px;margin-top:24px;align-items:start}
+#demo-dialog .candidate-picker{display:flex;flex-wrap:wrap;gap:6px}
+#demo-dialog .candidate-picker button{flex:1;min-height:44px;padding:10px 12px;border:1px solid var(--mint);border-radius:6px;background:transparent;color:var(--ink);font-size:14px;line-height:1.4} /* taste-skill-ignore: outlined-box; actual place-choice buttons retain an unselected input boundary beside the filled aria-pressed state. */
+#demo-dialog .candidate-picker button[aria-pressed=true]{border-color:var(--ink);background:var(--ink);color:var(--paper);font-weight:650}
+#demo-dialog .all-places{margin-top:6px}
+#demo-dialog .all-places summary{min-height:44px;padding-block:10px;width:fit-content;font-size:13px;line-height:1.6;cursor:pointer}
+#demo-dialog .all-places>div{display:grid;grid-template-columns:repeat(auto-fill,minmax(44px,1fr));gap:6px;margin-top:6px}
+#demo-dialog .all-places button{min-height:44px;padding:8px 6px;border-radius:6px;background:var(--soft);color:var(--ink);font-size:13px}
+#demo-dialog .all-places button[aria-pressed=true]{background:var(--ink);color:var(--paper)}
+#demo-dialog .selection-result{display:grid;grid-template-columns:1fr;gap:10px;align-items:start}
+#demo-dialog .selected-summary{grid-column:auto;padding:18px 20px;border-radius:10px;background:var(--soft);color:var(--ink)}
+#demo-dialog .selected-summary>p{font-size:14px;line-height:1.5;font-weight:650}
+#demo-dialog .selected-summary>strong{display:block;margin-top:6px;font-size:44px;line-height:1.1;letter-spacing:-.035em;color:var(--purple);font-variant-numeric:tabular-nums}
+#demo-dialog .selected-summary>strong small{font-size:13px;font-weight:450;letter-spacing:0;margin-left:8px}
+#demo-dialog .selected-summary>span{display:block;margin-top:12px;font-size:14px;line-height:1.6}
+#demo-dialog .selected-conditions{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:8px;font-size:13px;line-height:1.6;color:var(--secondary)}
+#demo-dialog .selection-result>.button{width:100%;min-height:46px;padding:12px 18px;border-radius:6px;background:var(--ink);color:var(--paper);font-size:14px;line-height:1.4}
+#demo-dialog .comparison-link{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;padding:8px 0;font-size:14px;line-height:1.5}
+#demo-dialog .price-method{max-width:none;margin:28px 0 0;padding:0;background:transparent;color:var(--ink);border-block:1px solid var(--mint)}
+#demo-dialog .price-method summary{display:flex;align-items:center;min-height:60px;cursor:pointer;font-size:16px;font-weight:650;line-height:1.5}
+#demo-dialog .value-calculation{display:grid;grid-template-columns:1.1fr 1fr;gap:32px;padding:0 0 22px}
+#demo-dialog .value-calculation>div>strong{font-size:18px;line-height:1.5;letter-spacing:-.02em}
+#demo-dialog .value-calculation>div>span{display:block;margin-top:10px;font-size:14px;line-height:1.7}
+#demo-dialog .calculation-note{font-size:13px;line-height:1.75;color:var(--secondary)}
+#demo-dialog .demo-disclosure,#demo-dialog .noscript-note{margin-top:16px;text-align:left;font-size:13px;line-height:1.7;color:var(--secondary)}
+
+#demo-dialog .comparison{border:0}
+#demo-dialog .compare-toolbar{display:flex;justify-content:space-between;align-items:center;gap:20px;max-width:none;margin:0 0 20px}
+#demo-dialog .compare-toolbar>p{font-size:14px;font-weight:600;line-height:1.5}
+#demo-dialog .compare-toolbar>div{display:flex;align-items:center;gap:20px}
+#demo-dialog .compare-toolbar .button{min-height:44px;padding:11px 16px;border-radius:6px;background:var(--ink);color:var(--paper);font-size:14px;line-height:1.4;gap:22px}
+#demo-dialog .saved-places{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;max-width:none;margin:0}
+#demo-dialog .saved-place{overflow:hidden;border:0;border-radius:10px;background:var(--soft);color:var(--ink)}
+#demo-dialog .saved-place:nth-child(2),#demo-dialog .saved-place:nth-child(3){background:var(--soft)}
+#demo-dialog .saved-place.is-selected{background:var(--mint);outline:2px solid var(--ink);outline-offset:-2px}
+#demo-dialog .saved-place>button[data-select]{display:grid;grid-template-columns:1fr auto;grid-template-rows:auto auto auto;gap:12px;width:100%;padding:20px 20px 10px;background:transparent;color:var(--ink);text-align:left}
+#demo-dialog .place-id{grid-column:1;grid-row:1;font-size:48px;line-height:1;letter-spacing:-.035em}
+#demo-dialog .place-score{grid-column:2;grid-row:1;align-self:end;text-align:right;font-size:34px;line-height:1;letter-spacing:-.03em;color:var(--purple);font-variant-numeric:tabular-nums}
+#demo-dialog .place-score small{display:block;font-size:13px;line-height:1.5;letter-spacing:0;margin-top:6px}
+#demo-dialog .place-price{grid-column:1/-1;grid-row:2;font-size:14px;line-height:1.65}
+#demo-dialog .place-facts{grid-column:1/-1;grid-row:3;font-size:13px;line-height:1.7;color:var(--secondary)}
+#demo-dialog .saved-place>button[data-remove]{display:flex;align-items:center;justify-content:space-between;gap:16px;min-height:44px;width:100%;padding:8px 20px 12px;background:transparent;color:var(--secondary);font-size:13px;line-height:1.5}
+#demo-dialog .saved-place>button[data-remove] span{font-size:20px}
+#demo-dialog .comparison-details{max-width:none;margin:20px 0 0}
+#demo-dialog .comparison-details>summary{min-height:52px;padding-block:14px;font-size:14px;line-height:1.6;cursor:pointer}
+#demo-dialog .comparison-scroll{overflow-x:auto;background:var(--soft);color:var(--ink);border-radius:10px}
+#demo-dialog .comparison-table{width:100%;min-width:560px;border-collapse:collapse;text-align:left}
+#demo-dialog .comparison-table th,#demo-dialog .comparison-table td{padding:16px 20px;font-size:14px;line-height:1.6}
+#demo-dialog .comparison-table thead{background:var(--mint)}
+#demo-dialog .comparison-table thead th{font-size:16px;font-weight:650}
+#demo-dialog .comparison-table tbody tr:nth-child(even){background:var(--mint)}
+#demo-dialog .comparison-table tbody th{font-weight:550}
+#demo-dialog .comparison-table .score-cell{font-size:25px;color:var(--purple);font-variant-numeric:tabular-nums}
+#demo-dialog .share-fallback{display:flex;align-items:center;flex-wrap:wrap;gap:12px;max-width:none;margin:20px 0 0;padding:18px;border-radius:10px;background:var(--soft);color:var(--ink)}
+#demo-dialog .share-fallback label{flex-basis:100%;font-size:14px;line-height:1.6}
+#demo-dialog .share-fallback input{flex:1;min-width:0;min-height:44px;padding:11px 12px;border:1px solid var(--secondary);border-radius:6px;background:var(--paper);color:var(--ink);font-size:14px;line-height:1.5}
+#demo-dialog .comparison-empty{grid-column:1/-1;padding:32px 24px;border-radius:10px;background:var(--soft);color:var(--ink);text-align:center;font-size:16px;line-height:1.7}
+#demo-dialog .comparison-empty .button{min-height:44px;border-radius:6px;font-size:14px}
+#demo-dialog button:disabled{opacity:.6;cursor:default}
+#demo-dialog button[disabled][aria-pressed=true]{opacity:1}
+#demo-dialog :focus-visible{outline:3px solid var(--accent);outline-offset:3px}
+#demo-dialog .demo-dialog-header :focus-visible{outline-color:var(--mint)}
+@media(hover:hover) and (pointer:fine){
+#demo-dialog .segmented button:not([aria-pressed=true]):not(:disabled):hover,#demo-dialog .scene-controls button:not([aria-pressed=true]):not(:disabled):hover,#demo-dialog .candidate-picker button:not([aria-pressed=true]):not(:disabled):hover,#demo-dialog .all-places button:not([aria-pressed=true]):not(:disabled):hover{background:var(--mint);color:var(--ink)}
+#demo-dialog .button:not(:disabled):hover{background:var(--accent);color:var(--paper)}
+#demo-dialog .text-button:not(:disabled):hover,#demo-dialog .comparison-link:hover{color:var(--accent)}
+#demo-dialog .saved-place:has(button[data-select]:hover){background:var(--mint)}
+#demo-dialog #close-demo:hover{color:var(--mint)}
+}
+@media(max-width:1100px){
+#demo-dialog .experience-stage{grid-template-columns:minmax(0,1fr) minmax(300px,.9fr);gap:22px}
+#demo-dialog .platform-bottom{flex-direction:column;gap:10px}
+#demo-dialog .experience-map{padding:16px}
+#demo-dialog .experience-city{margin-inline:-16px}
+#demo-dialog .value-calculation{gap:24px}
+}
+@media(max-width:760px){
+#demo-dialog{width:100%;height:100dvh;max-height:none;margin:0;inset:0}
+#demo-dialog .demo-dialog-header{min-height:64px;padding:10px 16px;gap:12px}
+#demo-dialog .demo-dialog-header h2{font-size:16px}
+#demo-dialog #close-demo{min-width:64px;padding:8px;font-size:13px;gap:10px}
+#demo-dialog .experience,#demo-dialog .comparison{padding:22px 20px 28px}
+#demo-dialog .section-heading{grid-template-columns:1fr;gap:12px;margin-bottom:22px}
+#demo-dialog .section-heading h2{font-size:26px;line-height:1.15}
+#demo-dialog .section-lead{font-size:15px;line-height:1.6}
+#demo-dialog .section-note{font-size:13px;margin-top:8px}
+#demo-dialog .experience-stage{grid-template-columns:1fr;gap:26px}
+#demo-dialog .experience-map{position:relative;top:auto;margin:0 -4px;padding:16px;border-radius:10px}
+#demo-dialog .experience-map-header{font-size:14px;gap:12px;align-items:start}
+#demo-dialog .experience-map-header>span:last-child{font-size:13px}
+#demo-dialog .segmented{margin-top:14px;gap:2px}
+#demo-dialog .segmented button{min-height:44px;font-size:13px;padding:10px 5px}
+#demo-dialog .experience-city{height:260px;margin-inline:-16px}
+#demo-dialog .scene-status{font-size:13px;line-height:1.5}
+#demo-dialog .platform-bottom{flex-direction:column;gap:10px;margin-top:14px}
+#demo-dialog .platform-bottom>p{font-size:13px;line-height:1.6}
+#demo-dialog .platform-bottom .map-legend i{width:21px}
+#demo-dialog .criteria-heading{margin-bottom:16px}
+#demo-dialog .criteria-heading h3{font-size:20px}
+#demo-dialog .criteria-sliders{gap:18px}
+#demo-dialog .criteria-row>div{font-size:16px}
+#demo-dialog .criteria-row output{font-size:25px}
+#demo-dialog .selection-workspace{margin-top:22px}
+#demo-dialog .selected-summary{padding:18px}
+#demo-dialog .selected-summary>strong{font-size:42px}
+#demo-dialog .price-method{margin-top:24px}
+#demo-dialog .value-calculation{grid-template-columns:1fr;gap:18px}
+#demo-dialog .value-calculation>div>strong{font-size:17px}
+#demo-dialog .compare-toolbar{align-items:start;gap:14px;margin-bottom:18px}
+#demo-dialog .compare-toolbar>p{padding-top:12px;font-size:13px}
+#demo-dialog .compare-toolbar>div{flex-direction:column;align-items:end;gap:0}
+#demo-dialog .compare-toolbar .button{order:-1;min-height:44px;padding:11px 13px;gap:16px;font-size:13px}
+#demo-dialog .saved-places{grid-template-columns:1fr;gap:10px}
+#demo-dialog .saved-place>button[data-select]{grid-template-columns:48px 1fr auto;grid-template-rows:auto auto;gap:8px 14px;padding:18px 16px 8px;align-items:center}
+#demo-dialog .place-id{grid-column:1;grid-row:1/3;font-size:42px}
+#demo-dialog .place-score{grid-column:3;grid-row:1/3;font-size:30px}
+#demo-dialog .place-price{grid-column:2;grid-row:1;font-size:14px}
+#demo-dialog .place-facts{grid-column:2;grid-row:2;font-size:13px}
+#demo-dialog .saved-place>button[data-remove]{padding:8px 16px 12px}
+#demo-dialog .comparison-table th,#demo-dialog .comparison-table td{padding:14px 16px}
+#demo-dialog .comparison-empty{padding:26px 20px}
+}
+@media(max-width:370px){
+#demo-dialog .experience,#demo-dialog .comparison{padding-inline:16px}
+#demo-dialog .section-heading h2{font-size:24px}
+#demo-dialog .experience-map-header{flex-direction:column;gap:3px}
+#demo-dialog .experience-city{height:240px}
+#demo-dialog .selected-summary>span{font-size:13px}
+#demo-dialog .saved-place>button[data-select]{grid-template-columns:34px 1fr auto;gap:8px 10px;padding:16px 12px 8px}
+#demo-dialog .place-id{font-size:36px}
+#demo-dialog .place-score{font-size:27px}
+#demo-dialog .place-price{font-size:13px}
+#demo-dialog .saved-place>button[data-remove]{padding-inline:12px}
+#demo-dialog .compare-toolbar .button{padding-inline:10px;gap:10px}
+}
+@media(prefers-reduced-motion:reduce){
+#demo-dialog .segmented button{transition:none}
+}
+
+@media(max-height:740px){#demo-dialog .experience-map{position:relative;top:auto}}
+/* Plain missing-value messages have no score-unit label. */
+#demo-dialog .selected-summary>strong:not(:has(small)){font-size:28px;line-height:1.35;letter-spacing:-.02em;color:var(--secondary)}

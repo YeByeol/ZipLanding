@@ -27,7 +27,7 @@ test('SVG marker projection uses actual CTM in container CSS pixels without draw
  const v=fixture();try{
   assert.equal(typeof v.owner.projectAnchors,'function');
   const ids=Object.freeze(['a','b','not-a-building']);const before=v.frames.size;
-  assert.deepEqual(v.owner.projectAnchors(ids),[{id:'a',x:350,y:100,visible:true,renderer:'svg'},{id:'b',x:0,y:0,visible:false,renderer:'svg'},{id:'not-a-building',x:0,y:0,visible:false,renderer:'svg'}]);
+  assert.deepEqual(v.owner.projectAnchors(ids),[{id:'a',x:350,y:100,radius:24,visible:true,renderer:'svg'},{id:'b',x:0,y:0,radius:0,visible:false,renderer:'svg'},{id:'not-a-building',x:0,y:0,radius:0,visible:false,renderer:'svg'}]);
   v.owner.projectAnchors(ids);assert.equal(v.frames.size,before);assert.deepEqual(ids,['a','b','not-a-building']);
  }finally{v.cleanup();}
 });
@@ -41,7 +41,7 @@ test('projection guards actual marker visibility, invalid CTMs and bounds withou
   v.marker.getBoundingClientRect=()=>({width:0,height:0});assert.equal(visible(),false);v.marker.getBoundingClientRect=()=>({width:48,height:70});
   v.marker.getScreenCTM=()=>null;assert.equal(visible(),false);
   v.marker.getScreenCTM=()=>({e:Infinity,f:150});assert.equal(visible(),false);
-  v.marker.getScreenCTM=()=>({e:1000,f:150});assert.deepEqual(v.owner.projectAnchors(['a'])[0],{id:'a',x:900,y:100,visible:false,renderer:'svg'});
+  v.marker.getScreenCTM=()=>({e:1000,f:150});assert.deepEqual(v.owner.projectAnchors(['a'])[0],{id:'a',x:900,y:100,radius:24,visible:false,renderer:'svg'});
   v.container.clientWidth=0;assert.equal(visible(),false);
   v.container.clientWidth=Infinity;assert.equal(visible(),false);assert.equal(v.owner.projectAnchors(['a'])[0].x,0);v.container.clientWidth=640;
   v.container.style.visibility='hidden';assert.equal(visible(),false);v.container.style.visibility='';

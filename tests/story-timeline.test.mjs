@@ -12,7 +12,7 @@ test('one timeline holds each reading pose and uses smooth, history-free transit
     assert.deepEqual(frame.opacities, PHASES.map((_, i) => +(i === index)));
   }
   for (const boundary of Array.from({length:7},(_,i)=>(i+.5)/7)) {
-    for (const p of [boundary - .035, boundary, boundary + .035]) {
+    for (const p of [boundary - timelineModule.TRANSITION_WINDOW, boundary, boundary + timelineModule.TRANSITION_WINDOW]) {
       const forward = storyTimeline(p, 'discover'), reverse = storyTimeline(p, 'closing');
       const physical = ({ phase, ...rest }) => rest;
       assert.deepEqual(physical(forward), physical(reverse));
@@ -21,7 +21,7 @@ test('one timeline holds each reading pose and uses smooth, history-free transit
     assert.ok(Math.abs(center.blend - .5) < 1e-12);
     assert.deepEqual(center.opacities, Array(8).fill(0), 'quiet middle keeps the city visible without overlapping titles');
     const epsilon = 1e-6;
-    for (const edge of [boundary - .035, boundary + .035]) {
+    for (const edge of [boundary - timelineModule.TRANSITION_WINDOW, boundary + timelineModule.TRANSITION_WINDOW]) {
       const speed = Math.abs(storyTimeline(edge + epsilon).blend - storyTimeline(edge - epsilon).blend) / (2 * epsilon);
       // Adjacent holds use blend 0; compare the interpolated phase coordinate instead.
       const coordinate = p => { const f = storyTimeline(p); return PHASES.indexOf(f.from) + (PHASES.indexOf(f.to) - PHASES.indexOf(f.from)) * f.blend; };
@@ -61,9 +61,14 @@ test('shared RGB transition blends endpoints and missingness independently of bl
 test('floating point fade endpoints remain bounded so zero-opacity panels can be hidden', () => {
   const { storyTimeline } = timelineModule;
   for (const boundary of Array.from({length:7},(_,i)=>(i+.5)/7)) for (let power = 3; power < 16; power++) {
-    const p = boundary - .035 + .45 * (1 - 10 ** -power) * .12;
+    const p = boundary - timelineModule.TRANSITION_WINDOW + .45 * (1 - 10 ** -power) * (2 * timelineModule.TRANSITION_WINDOW);
     const frame = storyTimeline(p);
     assert.ok(frame.opacities.every(value => value >= 0 && value <= 1));
     assert.ok(frame.blend >= 0 && frame.blend <= 1);
   }
+});
+
+test('large camera transitions use the wider shared progress window before each reading hold',()=>{
+ const frame=timelineModule.storyTimeline(.5/7+.04);
+ assert.equal(frame.from,'discover');assert.equal(frame.to,'price');assert.ok(frame.blend<1&&frame.blend>0);
 });

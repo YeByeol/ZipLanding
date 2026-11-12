@@ -91,6 +91,7 @@ export function mountMotion({ scenes = [], header, progress, onUpdate }) {
   schedule();
 
   return {
+    refresh:schedule,
     destroy() {
       destroyed = true;
       if (frame !== null) window.cancelAnimationFrame(frame);

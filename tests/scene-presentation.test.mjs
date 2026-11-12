@@ -22,7 +22,7 @@ test('presentation belongs only to the noninteractive owner and respects its man
     assert.equal(typeof hero.setPresentation, 'function');
     hero.setPresentation({ yaw: .5, pitch: .86, zoom: 4.2, target: { x: -3, y: .5, z: -2 } });
     assert.equal(heroNode.dataset.viewPreset, 'story');
-    assert.equal(heroNode.dataset.viewZoom, '1.05', 'reduced motion keeps the wide camera');
+    assert.equal(heroNode.dataset.viewZoom, '1.22', 'reduced motion keeps the wide camera');
     assert.equal(heroNode.dataset.targetX, '0.0000');
     assert.equal(heroNode.dataset.manualView, 'false');
     experience.setPreset('plan');

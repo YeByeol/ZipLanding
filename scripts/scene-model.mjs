@@ -53,15 +53,19 @@ export function presentationForProgress(progress, building = BUILDINGS[0], { red
   const selected = valid ? { ...buildingPosition(building), y: building.height / 78 + .14 } : center;
   const evidence = BUILDINGS.find(item=>item.id==='x');
   const unknown = {...buildingPosition(evidence),y:evidence.height/78+.14};
+  const comparison = BUILDINGS.slice(0,3).reduce((point,item)=>{
+    const position=buildingPosition(item);
+    return {x:point.x+position.x/3,y:point.y+(item.height/78+.14)/3,z:point.z+position.z/3};
+  },{x:0,y:0,z:0});
   const frames = [
-    {yaw:.72,pitch:.68,zoom:1.05,target:center},
-    {yaw:.68,pitch:.70,zoom:1.2,target:selected},
-    {yaw:.62,pitch:.80,zoom:2.6,target:selected},
-    {yaw:.72,pitch:.76,zoom:1.05,target:center},
-    {yaw:.62,pitch:.72,zoom:1,target:center},
-    {yaw:.56,pitch:.92,zoom:1.05,target:center},
-    {yaw:.62,pitch:.80,zoom:1.9,target:unknown},
-    {yaw:.72,pitch:.68,zoom:1.05,target:center},
+    {yaw:.72,pitch:.68,zoom:1.22,target:center},
+    {yaw:.64,pitch:.72,zoom:1.85,target:selected},
+    {yaw:.52,pitch:.76,zoom:3.4,target:selected},
+    {yaw:.92,pitch:.72,zoom:1.55,target:center},
+    {yaw:.58,pitch:.84,zoom:1.65,target:comparison},
+    {yaw:.42,pitch:1,zoom:1.5,target:center},
+    {yaw:.85,pitch:.76,zoom:3,target:unknown},
+    {yaw:.72,pitch:.68,zoom:1.22,target:center},
   ];
   const timeline = storyTimeline(reduced ? 0 : progress);
   const from = frames[PHASES.indexOf(timeline.from)], to = frames[PHASES.indexOf(timeline.to)];

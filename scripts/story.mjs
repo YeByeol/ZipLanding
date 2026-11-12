@@ -14,6 +14,17 @@ const captions = {
   closing:'이제 직접 기준을 바꿔보세요. 선택 체험의 입력은 이 소개의 시연과 별도로 유지됩니다.',
 };
 
+const CLOCK_EPSILON=.00002;
+export function stepStoryProgress(current,target,elapsed=16){
+ const end=Number.isFinite(target)?Math.max(0,Math.min(1,target)):0;
+ if(!Number.isFinite(current))return end;
+ const start=Math.max(0,Math.min(1,current));
+ if(Math.abs(end-start)<=CLOCK_EPSILON)return end;
+ const dt=Number.isFinite(elapsed)?Math.max(0,elapsed):16;
+ const next=start+(end-start)*(1-Math.exp(-dt/90));
+ return Math.abs(end-next)<=CLOCK_EPSILON?end:next;
+}
+
 export function storyPhaseForSteps(rects, viewport) {
   const fallback={phase:'discover',progress:0};
   if(!Number.isFinite(viewport)||viewport<=0||!Array.isArray(rects)||rects.length!==PHASES.length)return fallback;
@@ -23,7 +34,7 @@ export function storyPhaseForSteps(rects, viewport) {
   return {phase:storyTimeline(progress).phase,progress};
 }
 
-export function mountStory({root,element,owner}) {
+export function mountStory({root,element,owner,onPhaseChange}) {
   const all=selector=>[...(root?.querySelectorAll(selector)??[])];
   const steps=all('[data-story-step]'),panels=all('[data-story-panel]'),links=all('[data-story-link]');
   const fields=all('[data-film-field]'),weights=all('[data-film-weight]');
@@ -31,15 +42,18 @@ export function mountStory({root,element,owner}) {
   const chapterSelect=root?.querySelector('#story-chapter-select'),position=root?.querySelector('#story-position');
   const legacyFields=all('[data-story-field]'),units=all('[data-story-unit]');
   const caption=root?.querySelector('#story-caption'),legend=root?.querySelector('#story-legend'),selection=root?.querySelector('#hero-selection');
-  const originalRoot=Object.fromEntries(['storyPhase','storyEnhanced'].map(key=>[key,root?.dataset[key]]));
+  const originalRoot=Object.fromEntries(['storyPhase','storyEnhanced','filmProgress','filmTarget'].map(key=>[key,root?.dataset[key]]));
   const initialMode=element?.dataset.storyMode,captionOpacity=caption?.style.opacity;
+  const originalFilmProgress=root?.style?.getPropertyValue?.('--film-progress')??'';
   const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
   const originalLinks=links.map(link=>({link,aria:link.getAttribute('aria-current')}));
   const viewport=root?.ownerDocument?.defaultView;
   const lowHeight=viewport?.matchMedia?.('(max-height: 620px)');
   let enhanced=!(lowHeight?.matches??viewport?.innerHeight<=620);
   let reduced=viewport?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches??false;
-  let progress=0,phase,presentationKey,fieldsKey,destroyed=false;
+  let progress=0,targetProgress=0,phase,presentationKey,fieldsKey,destroyed=false,hasRead=false,frame=null,lastTime=null;
+  const document=root?.ownerDocument;
+  const canAnimate=typeof viewport?.requestAnimationFrame==='function'&&typeof viewport?.cancelAnimationFrame==='function';
   const setBeat=(panel,key,value)=>panel.style.setProperty?panel.style.setProperty(key,value):panel.style[key]=value;
   const connections=mountStoryConnections({root,owner});
 
@@ -47,8 +61,9 @@ export function mountStory({root,element,owner}) {
     if(destroyed)return;
     const snapshot=filmSnapshot(progress,phase,{reduced,complete:!enhanced});
     const timeline=snapshot.timeline;
+    const phaseChanged=phase!==timeline.phase;
     phase=timeline.phase;
-    if(root){root.dataset.storyPhase=phase;root.dataset.storyEnhanced=String(enhanced);}
+    if(root){root.dataset.storyPhase=phase;root.dataset.storyEnhanced=String(enhanced);root.dataset.filmProgress=String(progress);root.dataset.filmTarget=String(targetProgress);root.style?.setProperty?.('--film-progress',String(progress));}
     if(element)element.dataset.storyMode=MODES[phase];
     for(const panel of panels){
       const index=PHASES.indexOf(panel.dataset.storyPanel),alpha=enhanced?timeline.opacities[index]??0:1;
@@ -58,7 +73,7 @@ export function mountStory({root,element,owner}) {
       snapshot.beats[panel.dataset.storyPanel]?.forEach((beat,i)=>setBeat(panel,'--beat-'+(i+1),String(beat)));
     }
     if(chapterSelect)chapterSelect.value=phase;
-    if(position)position.textContent=`${String(PHASES.indexOf(phase)+1).padStart(2,'0')} / 08`;
+    if(position)position.textContent='스크롤로 이어 보기';
     for(const link of links){
       const target=link.dataset.storyLink||link.getAttribute('href')?.replace('#story-','');
       if(target===phase)link.setAttribute('aria-current','step');else link.removeAttribute('aria-current');
@@ -85,21 +100,52 @@ export function mountStory({root,element,owner}) {
     connections.setSnapshot(snapshot);
     if(key!==presentationKey){presentationKey=key;owner?.setPresentation(snapshot.frame);}
     connections.update();
+    if(phaseChanged)onPhaseChange?.(phase);
   }
+  function cancelClock(){
+    if(frame!==null)viewport?.cancelAnimationFrame?.(frame);
+    frame=null;lastTime=null;
+  }
+  function schedule(){
+    if(!canAnimate||destroyed||document?.hidden||frame!==null||progress===targetProgress)return;
+    lastTime??=viewport.performance?.now?.()??null;
+    frame=viewport.requestAnimationFrame(tick);
+  }
+  function tick(time){
+    frame=null;
+    if(destroyed||document?.hidden)return;
+    const elapsed=Number.isFinite(time)&&Number.isFinite(lastTime)?time-lastTime:16;
+    lastTime=Number.isFinite(time)?time:null;
+    progress=stepStoryProgress(progress,targetProgress,elapsed);
+    render();
+    if(progress===targetProgress)lastTime=null;else schedule();
+  }
+  function updateScroll({reduced:preference=reduced,immediate=false}={}){
+    if(destroyed)return;
+    const nextEnhanced=!(lowHeight?.matches??viewport?.innerHeight<=620);
+    const modeChanged=enhanced!==nextEnhanced||reduced!==preference;
+    if(modeChanged)presentationKey=undefined;
+    enhanced=nextEnhanced;reduced=preference;
+    targetProgress=storyPhaseForSteps(steps.map(step=>step.getBoundingClientRect()),viewport?.innerHeight).progress;
+    const bypass=!hasRead||immediate||modeChanged||reduced||!enhanced||!canAnimate||document?.hidden;
+    hasRead=true;
+    if(bypass){cancelClock();progress=targetProgress;}
+    else progress=stepStoryProgress(progress,targetProgress,0);
+    render();
+    if(progress===targetProgress)cancelClock();else schedule();
+  }
+  function visibilityChanged(){cancelClock();presentationKey=undefined;updateScroll({reduced:viewport?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches??reduced,immediate:true});}
+  document?.addEventListener?.('visibilitychange',visibilityChanged);
   render();
   return {
     update(){render();},
-    updateScroll({reduced:preference=reduced}={}){
-      if(destroyed)return;
-      const nextEnhanced=!(lowHeight?.matches??viewport?.innerHeight<=620);
-      if(enhanced!==nextEnhanced||reduced!==preference)presentationKey=undefined;
-      enhanced=nextEnhanced;reduced=preference;
-      progress=storyPhaseForSteps(steps.map(step=>step.getBoundingClientRect()),viewport?.innerHeight).progress;
-      render();
-    },
+    updateScroll,
     destroy(){
       destroyed=true;
+      cancelClock();
+      document?.removeEventListener?.('visibilitychange',visibilityChanged);
       connections.destroy();
+      if(originalFilmProgress)root?.style?.setProperty?.('--film-progress',originalFilmProgress);else root?.style?.removeProperty?.('--film-progress');
       if(root)for(const[key,value]of Object.entries(originalRoot)){if(value===undefined)delete root.dataset[key];else root.dataset[key]=value;}
       if(element){if(initialMode===undefined)delete element.dataset.storyMode;else element.dataset.storyMode=initialMode;}
       if(caption)caption.style.opacity=captionOpacity??'';

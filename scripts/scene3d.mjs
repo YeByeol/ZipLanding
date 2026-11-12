@@ -1,4 +1,4 @@
-import { fitOrthographicBounds, storyWorldBounds } from './scene-framing.mjs';
+import { compositionProjection, fitOrthographicBounds, storyWorldBounds } from './scene-framing.mjs';
 import { BUILDINGS } from './demo.mjs';
 import { PALETTES, colorFrameForTransition, mountCity } from './city.mjs';
 import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset, clampPresentation, presentationForProgress } from './scene-model.mjs';
@@ -26,9 +26,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   let target = { x: 0, y: .28, z: 0 }, targetCenter = { ...target };
   let reduced = motion.matches, destroyed = false, initialized = false, visible = true, lost = false;
   let renderer, world, camera, canvas, THREE, frame = 0, previousTime = 0, hovered = null, pointer = null;
-  let resizeObserver, visibilityObserver, entryObserver, sceneBounds, storyFit;
+  let resizeObserver, visibilityObserver, entryObserver, sceneBounds, storyFit, storyComposition;
   const objects = [], resources = new Set(), listeners = [], paintListeners = new Set();
-  let anchorPoint;
+  let anchorPoint, anchorScale;
   const tooltip = document.createElement('div');
   tooltip.className = 'scene-tooltip'; tooltip.hidden = true; tooltip.setAttribute('aria-hidden', 'true');
   const tooltipLabel = document.createElement('strong'), tooltipValue = document.createElement('span');
@@ -90,6 +90,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
         camera.updateMatrixWorld(true);
         const fit = fitOrthographicBounds(sceneBounds, camera.matrixWorldInverse.elements, { width, height, ...storyFit });
         if (fit) { projection = fit; zoom = fit.zoom; }
+      } else if (storyOwned() && storyComposition) {
+        const composed = compositionProjection({width,height,zoom,composition:storyComposition});
+        if (composed) { projection = composed; zoom = composed.zoom; }
       }
       if (Object.entries(projection).some(([key, value]) => camera[key] !== value)) {
         Object.assign(camera, projection);
@@ -464,7 +467,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       const usable = !destroyed && visible && !document.hidden && Number.isFinite(width) && Number.isFinite(height) && width > 0 && height > 0 && cssVisible(container);
       const rect = usable ? container.getBoundingClientRect() : null;
       return ids.map(id => {
-        const result = { id, x: 0, y: 0, visible: false, renderer: active };
+        const result = { id, x: 0, y: 0, radius: 0, visible: false, renderer: active };
         if (!usable) return result;
         if (active === 'webgl') {
           const item = objects.find(object => object.id === id);
@@ -474,6 +477,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
           if (![anchorPoint.x, anchorPoint.y, anchorPoint.z].every(Number.isFinite)) return result;
           result.x = (anchorPoint.x + 1) * width / 2;
           result.y = (1 - anchorPoint.y) * height / 2;
+          anchorScale ??= new THREE.Vector3();
+          item.marker.getWorldScale(anchorScale);
+          result.radius = .41 * Math.abs(anchorScale.y * camera.projectionMatrix.elements[5]) * height / 2;
           result.visible = anchorPoint.z >= -1 && anchorPoint.z <= 1;
         } else {
           const marker = svgMarkers.get(id);
@@ -484,9 +490,12 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
           if (!matrix || ![matrix.e, matrix.f, rect.left, rect.top].every(Number.isFinite)) return result;
           result.x = matrix.e - rect.left;
           result.y = matrix.f - rect.top;
+          const circle = marker.querySelector?.('circle')?.getBoundingClientRect?.();
+          const disc = circle && circle.width > 0 && circle.height > 0 ? circle : bounds;
+          result.radius = Math.min(disc.width, disc.height) / 2;
           result.visible = true;
         }
-        result.visible &&= result.x >= 0 && result.x <= width && result.y >= 0 && result.y <= height;
+        result.visible &&= Number.isFinite(result.radius) && result.radius > 0 && result.x >= 0 && result.x <= width && result.y >= 0 && result.y <= height;
         return result;
       });
     },
@@ -510,6 +519,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (destroyed || interactive || manual) return;
       const next = reduced ? presentationForProgress(0) : clampPresentation(frame);
       storyFit = frame?.fit && typeof frame.fit === 'object' ? { padding: frame.fit.padding, occupancy: frame.fit.occupancy } : null;
+      storyComposition = frame?.composition && typeof frame.composition === 'object' ? {desktop:{...frame.composition.desktop},mobile:{...frame.composition.mobile},mobileScale:frame.composition.mobileScale} : null;
       if (frame?.colorBlend) {
         const { from, to, mix, continuous } = frame.colorBlend;
         if (Object.hasOwn(PALETTES, from) && Object.hasOwn(PALETTES, to)) {

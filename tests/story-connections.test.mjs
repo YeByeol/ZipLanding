@@ -20,3 +20,13 @@ test('opaque data surfaces hide covered markers without clamping them to an edge
   assert.equal(module.isCovered({x:99.9,y:250},[rect]),false);
   assert.equal(module.isCovered({x:150,y:250},[]),false);
 });
+
+test('leaders stay out of the opaque reading scrim without moving their real origins',()=>{
+  const window=module.inCityReadingWindow;
+  assert.equal(window({x:210,y:147},{width:320,height:576}),false);
+  assert.equal(window({x:190,y:220},{width:390,height:780}),true);
+  assert.equal(window({x:400,y:300},{width:1440,height:928}),false);
+  assert.equal(window({x:1000,y:300},{width:1440,height:928}),true);
+  assert.equal(window({x:NaN,y:300},{width:1440,height:928}),false);
+  assert.equal(window({x:1,y:1},{width:0,height:0}),false);
+});

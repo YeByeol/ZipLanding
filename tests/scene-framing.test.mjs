@@ -1,3 +1,4 @@
+import {TRANSITION_WINDOW} from '../scripts/story-timeline.mjs';
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import * as THREE from '../vendor/three.module.js';
@@ -12,7 +13,7 @@ const cameraFor=(frame,width,height)=>{
 };
 const corners=box=>[box.min.x,box.max.x].flatMap(x=>[box.min.y,box.max.y].flatMap(y=>[box.min.z,box.max.z].map(z=>new THREE.Vector3(x,y,z))));
 
-test('actual production geometry reproduces lower clipping and requires story-only fit',()=>{
+test('legacy narrow canvas clipping remains reproducible while full-world fitting is explicitly optional',()=>{
  const scene=productionDiorama();try{
   const box=new THREE.Box3().setFromObject(scene.world),camera=cameraFor(filmSnapshot(2/7).frame,1440,331);
   const bottom=Math.max(...corners(box).map(v=>(1-v.project(camera).y)*331/2));
@@ -28,7 +29,7 @@ test('conservative fit contains actual world meshes, billboard radius and select
   const original=new THREE.Box3().setFromObject(scene.world);
   assert.ok(bounds.min.x<=original.min.x-.16&&bounds.min.y<=original.min.y-.16&&bounds.min.z<=original.min.z-.16);
   assert.ok(bounds.max.y>=original.max.y+.16+.08-1e-12);
-  const samples=phases.map((_,i)=>i/7);for(let i=0;i<7;i++)for(let n=0;n<=20;n++)samples.push((i+.5)/7-.035+.07*n/20);
+  const samples=phases.map((_,i)=>i/7);for(let i=0;i<7;i++)for(let n=0;n<=20;n++)samples.push((i+.5)/7-TRANSITION_WINDOW+2*TRANSITION_WINDOW*n/20);
   for(const[width,height]of[[1440,331],[1366,278],[390,328],[320,219]])for(const p of samples){
    const snapshot=filmSnapshot(p),frame=snapshot.frame,camera=cameraFor(frame,width,height);
    const from=phases.indexOf(snapshot.timeline.from),to=phases.indexOf(snapshot.timeline.to),occupancy=occupancies[from]+(occupancies[to]-occupancies[from])*snapshot.timeline.blend;
@@ -51,4 +52,21 @@ test('fit rejects invalid geometry and keeps padding in CSS pixels independent o
  const tiny=module.fitOrthographicBounds(box,view,{width:20,height:20,padding:NaN,occupancy:1});assert.ok(Number.isFinite(tiny.zoom)&&tiny.zoom>0,'invalid padding keeps tiny canvas projection usable');
  const a=module.fitOrthographicBounds(box,view,{width:320,height:200,padding:20,occupancy:1,dpr:1});
  const b=module.fitOrthographicBounds(box,view,{width:320,height:200,padding:20,occupancy:1,dpr:2});assert.deepEqual(a,b);
+});
+
+
+test('cinematic composition keeps authored scale and puts the camera target right on desktop, centered on mobile',()=>{
+ assert.equal(typeof module.compositionProjection,'function');
+ const composition={desktop:{x:.72,y:.52},mobile:{x:.5,y:.43},mobileScale:1.15};
+ for(const[width,height,x,y,scale]of[[1440,828,.72,.52,1],[390,780,.5,.43,1.15]]){
+  for(const zoom of [1.22,3.4]){
+   const projection=module.compositionProjection({width,height,zoom,composition});
+   const camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,60);Object.assign(camera,projection);camera.updateProjectionMatrix();
+   const target=new THREE.Vector3(0,0,-14).project(camera);
+   assert.ok(Math.abs((target.x+1)/2-x)<1e-12);assert.ok(Math.abs((1-target.y)/2-y)<1e-12);
+   assert.equal(projection.zoom,zoom*scale,'a large closeup must not be shrunk to fit the whole city');
+  }
+ }
+ const a=module.compositionProjection({width:760,height:780,zoom:3.4,composition}),b=module.compositionProjection({width:760.001,height:780,zoom:3.4,composition});
+ assert.ok(Math.abs(a.left-b.left)<.001,'responsive composition also changes continuously');
 });
