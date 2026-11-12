@@ -24,4 +24,4 @@ Spec: `../specs/2026-11-12-zip-raised-safe-framing.md`. 재현 증거는 `qa/cro
 
 - [x] 같은 timeline의 fit occupancy와 reduced 고정값, 핵심 RED→GREEN.
 - [x] 기존 회귀·새 잘림/중간 수치·위쪽 구도·연결선/실제 선택 체험 검증과 독립 검토.
-- [ ] main/Pages 배포·Action 성공·공개 파일/동작 readback·receipt·정리.
+- [x] main/Pages 배포·Action 성공·공개 파일/동작 readback·receipt·정리. Source0db4115, Actions43185482557, 공개14+20개 검사 및23개 파일 byte-match.

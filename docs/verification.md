@@ -264,3 +264,9 @@ v2.3 공개 배포 확인:
 - 독립 검토에서 source·실제 이동 GPU 증거·최종320 closing/1366중간/1440장면을 확인하고 미해결 사항 없음으로 마쳤다. UI detector는 기존 의미 보라색과 내부 padding wrapper 경고만 남았다.
 
 실제 물리 기기의 브라우저 UI·nonzero safe-area·FPS/배터리는 검증하지 않았다. synthetic viewport 변경을 실제 Safari/Chrome 주소 표시줄 검증으로 주장하지 않는다.
+
+v2.4 공개 배포 확인:
+
+- 소스 `0db41154c359341e160f6b1f618db3e6e5bd3aa3`, Actions https://github.com/YeByeol/ZipLanding/actions/runs/43185482557 — completed / success.
+- https://yebyeol.github.io/ZipLanding/ 공개 전체 궤적 **14/14**, 연결선·가격축·탐색·마무리 기능 **20/20** 통과.1366×768 조건 중간p=.24의 세 수치 opacity1과320×640 마무리의 전체 도시도 실제 화면으로 다시 확인했다. browser errors0, overflow0.
+- 새 framing module을 포함한 HTML·CSS·앱·Three·브랜드/그림/글꼴 **23개 HTTP200/로컬 배포 소스와 바이트 일치**.
