@@ -42,7 +42,8 @@ for (const group of document.querySelectorAll('[data-scene]')) group.addEventLis
   const button = event.target.closest('[data-scene-action]');
   if (!button || button.disabled) return;
   const owner = cities.find(city => city.name === group.dataset.scene)?.owner;
-  if (button.dataset.sceneAction === 'reset') owner?.resetView();
+  if (button.dataset.sceneAction.startsWith('view-')) owner?.setPreset(button.dataset.sceneAction.slice(5));
+  else if (button.dataset.sceneAction === 'reset') owner?.resetView();
   else if (button.dataset.sceneAction === 'zoom-in') owner?.zoom(.15);
   else if (button.dataset.sceneAction === 'zoom-out') owner?.zoom(-.15);
   else owner?.rotate(button.dataset.sceneAction === 'left' ? -.3 : .3);

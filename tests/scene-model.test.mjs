@@ -40,3 +40,19 @@ test('button zoom remains bounded and invalid input keeps a usable default', () 
   assert.equal(model.clampZoom(1.15), 1.15);
   assert.equal(model.clampZoom(NaN), 1);
 });
+
+test('named views fit the city or focus the requested building without mutating its data', () => {
+  const building = { x: 5, y: 3, height: 64 };
+  assert.equal(typeof model.cameraPreset, 'function');
+  const overview = model.cameraPreset('overview');
+  const plan = model.cameraPreset('plan');
+  assert.deepEqual(overview.view, model.DEFAULT_VIEW);
+  assert.ok(plan.view.pitch > overview.view.pitch);
+  const focus = model.cameraPreset('focus', building);
+  assert.ok(focus.zoom > overview.zoom && focus.zoom <= 1.6);
+  assert.deepEqual({ x: focus.target.x, z: focus.target.z }, model.buildingPosition(building));
+  assert.ok(focus.target.y > .28);
+  assert.deepEqual(building, { x: 5, y: 3, height: 64 });
+  assert.equal(model.cameraPreset('unknown'), null);
+  assert.equal(model.cameraPreset('focus'), null);
+});

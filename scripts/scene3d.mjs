@@ -1,9 +1,17 @@
 import { BUILDINGS } from './demo.mjs';
 import { colorFor, mountCity } from './city.mjs';
-import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick } from './scene-model.mjs';
+import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset } from './scene-model.mjs';
 
 let threePromise;
 const loadThree = () => threePromise ||= import('../vendor/three.module.js');
+
+export function createBevelledBox(THREE) {
+  const shape = new THREE.Shape();
+  shape.moveTo(-.47, -.47); shape.lineTo(.47, -.47); shape.lineTo(.47, .47); shape.lineTo(-.47, .47); shape.closePath();
+  const geometry = new THREE.ExtrudeGeometry(shape, { depth: .94, bevelEnabled: true, bevelThickness: .03, bevelSize: .03, bevelSegments: 2, steps: 1, curveSegments: 1 });
+  geometry.center();
+  return geometry;
+}
 
 export function mountScene3D(container, { buildings = BUILDINGS, onSelect, interactive = false, scene = 'hero', onStatus = () => {} } = {}) {
   const fallback = mountCity(container, { buildings, onSelect, interactive });
@@ -12,11 +20,17 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   const motion = window.matchMedia('(prefers-reduced-motion: reduce)');
   let state = { mode: 'price', weights: undefined, selected: 'a', saved: ['a', 'b', 'c'] };
   let view = { ...DEFAULT_VIEW }, targetView = { ...view }, manual = false, progress = .5;
-  let zoom = 1;
+  let zoom = 1, targetZoom = 1, preset = 'scroll';
+  let target = { x: 0, y: .28, z: 0 }, targetCenter = { ...target };
   let reduced = motion.matches, destroyed = false, initialized = false, visible = true, lost = false;
   let renderer, world, camera, canvas, THREE, frame = 0, previousTime = 0, hovered = null, pointer = null;
   let resizeObserver, visibilityObserver, entryObserver;
   const objects = [], resources = new Set(), listeners = [];
+  const tooltip = document.createElement('div');
+  tooltip.className = 'scene-tooltip'; tooltip.hidden = true; tooltip.setAttribute('aria-hidden', 'true');
+  const tooltipLabel = document.createElement('strong'), tooltipValue = document.createElement('span');
+  tooltipLabel.className = 'scene-tooltip-label'; tooltipValue.className = 'scene-tooltip-value';
+  tooltip.append(tooltipLabel, tooltipValue); container.append(tooltip);
   const listen = (node, event, handler, options) => {
     node.addEventListener(event, handler, options);
     listeners.push(() => node.removeEventListener(event, handler, options));
@@ -27,15 +41,25 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     container.dataset.viewPitch = view.pitch.toFixed(4);
     container.dataset.manualView = String(manual);
     container.dataset.viewZoom = String(zoom);
+    container.dataset.viewPreset = preset;
+    container.dataset.targetX = target.x.toFixed(4);
+    container.dataset.targetZ = target.z.toFixed(4);
   };
   publishView();
   onStatus('svg');
+
+  function clearHover() {
+    hovered = null; tooltip.hidden = true;
+    if (canvas && !pointer) canvas.style.cursor = interactive ? 'grab' : 'default';
+    requestRender();
+  }
 
   function fallbackMode() {
     if (frame) cancelAnimationFrame(frame);
     frame = 0;
     svg.style.visibility = '';
     if (canvas) canvas.style.visibility = 'hidden';
+    tooltip.hidden = true;
     container.dataset.renderer = 'svg';
     onStatus('svg');
   }
@@ -46,8 +70,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
 
   function positionCamera() {
     const distance = 14;
-    camera.position.set(Math.sin(view.yaw) * Math.cos(view.pitch) * distance, Math.sin(view.pitch) * distance, Math.cos(view.yaw) * Math.cos(view.pitch) * distance);
-    camera.lookAt(0, .28, 0);
+    camera.position.set(target.x + Math.sin(view.yaw) * Math.cos(view.pitch) * distance, target.y + Math.sin(view.pitch) * distance, target.z + Math.cos(view.yaw) * Math.cos(view.pitch) * distance);
+    camera.lookAt(target.x, target.y, target.z);
     if (camera.zoom !== zoom) { camera.zoom = zoom; camera.updateProjectionMatrix(); }
     publishView();
   }
@@ -63,6 +87,13 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       view[key] = Math.abs(difference) < .0003 ? targetView[key] : view[key] + difference * amount;
       if (Math.abs(targetView[key] - view[key]) > .0003) unsettled = true;
     }
+    for (const key of ['x', 'y', 'z']) {
+      const difference = targetCenter[key] - target[key];
+      target[key] = Math.abs(difference) < .0003 ? targetCenter[key] : target[key] + difference * amount;
+      if (Math.abs(targetCenter[key] - target[key]) > .0003) unsettled = true;
+    }
+    zoom = Math.abs(targetZoom - zoom) < .0003 ? targetZoom : zoom + (targetZoom - zoom) * amount;
+    if (Math.abs(targetZoom - zoom) > .0003) unsettled = true;
     for (const item of objects) {
       const selected = item.id === state.selected;
       const targetY = selected ? .08 : 0;
@@ -124,10 +155,10 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
       renderer.setClearColor(0x000000, 0);
       renderer.shadowMap.enabled = true;
-      renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+      renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.32;
+      renderer.toneMappingExposure = 1.08;
       canvas.setAttribute('aria-hidden', 'true');
       canvas.tabIndex = -1;
       canvas.dataset.scene = scene;
@@ -136,8 +167,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       container.append(canvas);
       world = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-6, 6, 4, -4, .1, 60);
-      world.add(new THREE.HemisphereLight('#fafff3', '#82948a', 2.8));
-      const sun = new THREE.DirectionalLight('#fff4dc', 4.2);
+      world.add(new THREE.HemisphereLight('#f5faf8', '#81938a', 1.7));
+      const sun = new THREE.DirectionalLight('#fff4df', 3);
       sun.position.set(-4, 10, 7);
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
@@ -147,7 +178,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       sun.shadow.radius = 3;
       resources.add(sun.shadow);
       world.add(sun);
-      const fill = new THREE.DirectionalLight('#cbd9ff', 1.1);
+      const fill = new THREE.DirectionalLight('#dce9f3', .75);
       fill.position.set(5, 4, -5);
       world.add(fill);
       buildDiorama();
@@ -184,18 +215,19 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
 
   function buildDiorama() {
     const own = value => { resources.add(value); return value; };
-    const material = (color, extra = {}) => own(new THREE.MeshStandardMaterial({ color, roughness: .78, metalness: .04, ...extra }));
+    const material = (color, extra = {}) => own(new THREE.MeshStandardMaterial({ color, roughness: .82, metalness: 0, ...extra }));
     const concrete = material('#e5e9dd'), slab = material('#c3d0c2'), pavement = material('#c8d4c8');
     const road = material('#94afa5'), paint = material('#f5f1df'), park = material('#a9c5a2');
     const wood = material('#a88c60'), dark = material('#244b46'), trim = material('#e7eddf');
     const boxGeometry = own(new THREE.BoxGeometry(1, 1, 1));
-    const box = (parent, x, y, z, w, h, d, mat, shadow = true) => {
-      const mesh = new THREE.Mesh(boxGeometry, mat);
+    const bevelGeometry = own(createBevelledBox(THREE));
+    const box = (parent, x, y, z, w, h, d, mat, shadow = true, bevel = false) => {
+      const mesh = new THREE.Mesh(bevel ? bevelGeometry : boxGeometry, mat);
       mesh.position.set(x, y, z); mesh.scale.set(w, h, d);
       mesh.castShadow = shadow; mesh.receiveShadow = true; parent.add(mesh); return mesh;
     };
-    box(world, 0, -.29, 0, 8.7, .46, 6.4, slab);
-    box(world, 0, -.045, 0, 8.76, .075, 6.46, concrete);
+    box(world, 0, -.29, 0, 8.7, .46, 6.4, slab, true, true);
+    box(world, 0, -.045, 0, 8.76, .075, 6.46, concrete, true, true);
     box(world, 0, .004, 0, .48, .018, 5.85, road, false);
     box(world, 0, .006, 0, 7.95, .018, .46, road, false);
     box(world, 0, .007, -2.62, 7.95, .02, .2, pavement, false);
@@ -234,21 +266,28 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     const windowColor = new THREE.Color();
     for (const [index, building] of buildings.entries()) {
       const group = new THREE.Group();
-      group.position.set((building.x - 2.5) * 1.13 + (building.x > 2 ? .15 : -.15), 0, (building.y - 1.5) * 1.17 + (building.y > 1 ? .16 : -.16));
+      const position = buildingPosition(building);
+      group.position.set(position.x, 0, position.z);
       world.add(group);
       const h = building.height / 39, w = building.w * .93, d = building.d * .93;
-      box(group, 0, .028, 0, w + .16, .055, d + .16, pavement);
+      box(group, 0, .028, 0, w + .16, .055, d + .16, pavement, true, true);
       const facade = material(colorFor(building, buildings, state.mode, state.weights));
-      const body = box(group, 0, h / 2 + .06, 0, w, h, d, facade);
+      const body = box(group, 0, h / 2 + .06, 0, w, h, d, facade, true, true);
       body.userData.buildingId = building.id;
-      box(group, 0, .105, 0, w + .025, .085, d + .025, trim);
-      box(group, 0, h + .065, 0, w + .035, .045, d + .035, facade);
-      box(group, -.06, h + .14, -.04, w * .44, .12, d * .38, trim);
-      box(group, w * .23, h + .105, d * .18, w * .22, .035, d * .28, dark);
+      box(group, 0, .105, 0, w + .025, .085, d + .025, trim, true, true);
+      box(group, 0, h + .065, 0, w + .035, .045, d + .035, trim, true, true);
+      box(group, -.06, h + .14, -.04, w * .44, .12, d * .38, trim, true, true);
+      const panel = box(group, w * .23, h + .115, d * .18, w * .22, .035, d * .28, dark);
+      panel.rotation.x = -.18;
+      // Recessed roof and a street entrance make the semantic mass read as architecture.
+      box(group, 0, h + .09, 0, w * .84, .018, d * .84, slab, false);
+      box(group, 0, .15, d / 2 + .006, w * .15, .18, .012, dark, false);
+      box(group, 0, .26, d / 2 + .035, w * .31, .025, .1, trim);
+      for (const side of [-1, 1]) box(group, side * w * .37, h / 2 + .07, d / 2 + .006, .018, h * .88, .012, trim, false);
       const hatchPoints = [];
       for (let diagonal = -.8; diagonal < .81; diagonal += .18) {
         const start = Math.max(-.48, diagonal - .48), end = Math.min(.48, diagonal + .48);
-        hatchPoints.push(start * w, h + .092, (diagonal - start) * d, end * w, h + .092, (diagonal - end) * d);
+        hatchPoints.push(start * w, h + .108, (diagonal - start) * d, end * w, h + .108, (diagonal - end) * d);
       }
       const hatchGeometry = own(new THREE.BufferGeometry());
       hatchGeometry.setAttribute('position', new THREE.Float32BufferAttribute(hatchPoints, 3));
@@ -284,6 +323,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       const savedMarker = labelTexture(letter, '#72548e', '#ffffff');
       const selectedMarker = labelTexture(letter, '#174f43', '#ffffff');
       const marker = new THREE.Sprite(defaultMarker); marker.position.set(0, h + .38, 0); marker.scale.set(.32, .32, 1); marker.renderOrder = 3; group.add(marker);
+      marker.userData.buildingId = building.id;
       objects.push({ id: building.id, group, body, material: facade, targetColor: new THREE.Color(colorFor(building, buildings, state.mode, state.weights)), outline, missingMark, marker, defaultMarker, savedMarker, selectedMarker });
     }
   }
@@ -291,22 +331,33 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   function bindPointers() {
     const raycaster = new THREE.Raycaster();
     const point = new THREE.Vector2();
+    const bodies = objects.map(item => item.body), markers = objects.map(item => item.marker);
     const hit = event => {
       const rect = canvas.getBoundingClientRect();
       point.set((event.clientX - rect.left) / rect.width * 2 - 1, -(event.clientY - rect.top) / rect.height * 2 + 1);
       raycaster.setFromCamera(point, camera);
-      return raycaster.intersectObjects(objects.map(item => item.body), false)[0]?.object.userData.buildingId || null;
+      // Markers render above the model, so their picking has the same priority.
+      const markerHit = raycaster.intersectObjects(markers, false).find(result => !result.uv || Math.hypot(result.uv.x - .5, result.uv.y - .5) <= .41);
+      return (markerHit || raycaster.intersectObjects(bodies, false)[0])?.object.userData.buildingId || null;
+    };
+    const showHover = id => {
+      const building = buildings.find(item => item.id === id);
+      tooltip.hidden = !building;
+      if (!building) return;
+      tooltipLabel.textContent = `${building.id.toUpperCase()} · ${building.label}`;
+      tooltipValue.textContent = `보증금 ${building.deposit.toLocaleString('ko-KR')}만 원 · 월세 ${building.rent}만 원`;
     };
     if (!interactive) return;
     listen(canvas, 'pointerdown', event => {
       if (event.button !== 0 || pointer) return;
+      clearHover();
       pointer = { id: event.pointerId, x: event.clientX, y: event.clientY, view: { ...targetView }, type: event.pointerType, intent: 'pending', moved: false };
     });
     listen(window, 'pointermove', event => {
       if (!pointer || pointer.id !== event.pointerId) {
         if (event.target === canvas && event.pointerType !== 'touch') {
           const next = hit(event);
-          if (hovered !== next) { hovered = next; canvas.style.cursor = hovered ? 'pointer' : 'grab'; requestRender(); }
+          if (hovered !== next) { hovered = next; showHover(next); canvas.style.cursor = hovered ? 'pointer' : 'grab'; requestRender(); }
         }
         return;
       }
@@ -317,6 +368,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (!canvas.hasPointerCapture(event.pointerId)) canvas.setPointerCapture(event.pointerId);
       if (event.cancelable) event.preventDefault();
       manual = true;
+      preset = 'custom';
       targetView = clampView({ yaw: pointer.view.yaw - dx * .006, pitch: pointer.view.pitch + dy * .004 });
       if (reduced) view = { ...targetView };
       canvas.style.cursor = 'grabbing'; publishView(); requestRender();
@@ -326,11 +378,13 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       const clicked = event.type === 'pointerup' && !pointer.moved && isClick(event.clientX - pointer.x, event.clientY - pointer.y);
       if (canvas.hasPointerCapture(event.pointerId)) canvas.releasePointerCapture(event.pointerId);
       pointer = null; canvas.style.cursor = 'grab';
+      clearHover();
       if (clicked) { const id = hit(event); if (id) onSelect?.(id); }
     };
     listen(window, 'pointerup', end);
     listen(window, 'pointercancel', end);
-    listen(canvas, 'pointerleave', () => { if (!pointer && hovered) { hovered = null; requestRender(); } });
+    listen(canvas, 'pointerleave', () => { if (!pointer) clearHover(); });
+    listen(window, 'scroll', clearHover, { passive: true });
   }
 
   listen(document, 'visibilitychange', () => {
@@ -352,6 +406,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   return {
     update(next = {}) {
       state = { ...state, ...next };
+      clearHover();
       fallback.update(state);
       for (const item of objects) {
         const color = colorFor(buildings.find(building => building.id === item.id), buildings, state.mode, state.weights);
@@ -368,6 +423,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     rotate(deltaRadians) {
       if (!Number.isFinite(deltaRadians)) return;
       manual = true;
+      preset = 'custom'; clearHover();
       targetView = clampView({ ...targetView, yaw: targetView.yaw + deltaRadians });
       if (reduced) view = { ...targetView };
       publishView(); requestRender();
@@ -375,14 +431,26 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     zoom(delta) {
       if (!Number.isFinite(delta)) return;
       manual = true;
-      zoom = clampZoom(zoom + delta);
+      preset = 'custom'; clearHover();
+      targetZoom = clampZoom(targetZoom + delta);
+      if (reduced) zoom = targetZoom;
+      publishView(); requestRender();
+    },
+    setPreset(name) {
+      const next = cameraPreset(name, buildings.find(building => building.id === state.selected));
+      if (!next) return;
+      manual = true; preset = name; clearHover();
+      targetView = { ...next.view }; targetCenter = { ...next.target }; targetZoom = next.zoom;
+      if (reduced) { view = { ...targetView }; target = { ...targetCenter }; zoom = targetZoom; }
       publishView(); requestRender();
     },
     resetView() {
       manual = false;
-      zoom = 1;
+      preset = 'scroll'; clearHover();
+      targetZoom = 1;
+      targetCenter = { x: 0, y: .28, z: 0 };
       targetView = { ...DEFAULT_VIEW };
-      if (reduced) view = { ...targetView };
+      if (reduced) { view = { ...targetView }; target = { ...targetCenter }; zoom = targetZoom; }
       publishView(); requestRender();
     },
     destroy() {
@@ -391,7 +459,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       entryObserver?.disconnect(); visibilityObserver?.disconnect(); resizeObserver?.disconnect();
       listeners.forEach(remove => remove());
       resources.forEach(resource => resource.dispose());
-      renderer?.dispose(); canvas?.remove(); fallback.destroy();
+      renderer?.dispose(); canvas?.remove(); tooltip.remove(); fallback.destroy();
       container.style.position = originalPosition;
     },
   };

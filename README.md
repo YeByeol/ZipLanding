@@ -28,12 +28,13 @@ ES modules를 사용하므로 로컬 HTTP 서버로 열어주세요. GitHub Page
 - `index.html`, `styles.css`: 소개, 반응형 화면, 모션과 스크립트 없는 읽기 경로
 - `scripts/demo.mjs`: 24개 가상 건물, 조건 점수, 가격 비교, 공유 URL 검증
 - `scripts/city.mjs`: SVG 대체 모형과 3D가 공유하는 색 계산
-- `scripts/scene3d.mjs`, `scene-model.mjs`: 실제 3D, 회전·확대·선택, 카메라 범위와 그래픽 대체
+- `scripts/scene3d.mjs`, `scene-model.mjs`: 건축 모형 3D, 이름표·건물 선택, 사선·내려다보기·선택 확대, 카메라 범위와 그래픽 대체
 - `scripts/motion.mjs`: 자연스러운 스크롤 연출, 읽기 진행, 현재 메뉴와 움직임 줄이기
 - `scripts/main.mjs`: 중요도·지도 선택·담기·비교·공유 연결
 - `assets/`: SVG 브랜드·도시 장면, 공유 이미지, 로컬 글꼴
 - `tests/`: Node 기본 테스트
 - `docs/verification.md`: 실제 확인 범위와 제한
+- `docs/research/3d-skills-and-prompts.md`: 검토한 3D 스킬·프롬프트 자료와 적용 근거
 
 ## 체험 계산
 
