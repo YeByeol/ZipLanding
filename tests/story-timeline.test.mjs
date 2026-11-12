@@ -72,3 +72,25 @@ test('large camera transitions use the wider shared progress window before each 
  const frame=timelineModule.storyTimeline(.5/7+.04);
  assert.equal(frame.from,'discover');assert.equal(frame.to,'price');assert.ok(frame.blend<1&&frame.blend>0);
 });
+
+
+test('typography and HUD enter in reading order, settle before each hold and seek identically',()=>{
+ const {storyTimeline,PHASES,TRANSITION_WINDOW:window}=timelineModule;
+ assert.deepEqual(storyTimeline(0).entrances.discover,[1,1,1]);
+ for(let i=1;i<PHASES.length;i++){
+  const phase=PHASES[i],boundary=(i-.5)/7,start=boundary+.1*window,end=boundary+window;
+  assert.deepEqual(storyTimeline(start).entrances[phase],[0,0,0]);
+  assert.deepEqual(storyTimeline(end+1e-12).entrances[phase],[1,1,1]);
+  let previous=[0,0,0];
+  for(let sample=0;sample<=40;sample++){
+   const p=start+(end-start)*sample/40,forward=storyTimeline(p,'discover').entrances[phase],reverse=storyTimeline(p,'closing').entrances[phase];
+   assert.deepEqual(forward,reverse,'scroll direction and logical phase cannot alter the pose');
+   assert.ok(forward.every((value,j)=>Number.isFinite(value)&&value>=previous[j]&&value>=0&&value<=1));
+   assert.ok(forward[0]>=forward[1]&&forward[1]>=forward[2],'headline leads copy, then the information graphic');
+   previous=forward;
+  }
+  const half=storyTimeline((start+end)/2).entrances[phase];
+  assert.ok(half[0]>.9&&half[1]>.5&&half[2]>.2,'all three layers participate while the parent is fading in');
+ }
+ for(const p of [0,.2,.5,1])assert.ok(Object.values(storyTimeline(p,undefined,{reduced:true}).entrances).every(values=>values.every(value=>value===1)));
+});

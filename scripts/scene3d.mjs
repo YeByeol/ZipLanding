@@ -134,6 +134,8 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       item.material.emissive.set(item.id === hovered ? '#113a32' : '#000000');
       const highlighted = state.highlightIds?.includes(item.id);
       item.outline.visible = selected || highlighted;
+      // The film labels its subjects; the interactive map keeps every place discoverable.
+      item.marker.visible = interactive || selected || highlighted || (!storyOwned() && state.saved.includes(item.id));
       item.marker.material = selected ? item.selectedMarker : state.saved.includes(item.id) || highlighted ? item.savedMarker : item.defaultMarker;
     }
     positionCamera();
@@ -186,7 +188,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       renderer.shadowMap.type = THREE.PCFShadowMap;
       renderer.outputColorSpace = THREE.SRGBColorSpace;
       renderer.toneMapping = THREE.ACESFilmicToneMapping;
-      renderer.toneMappingExposure = 1.08;
+      renderer.toneMappingExposure = 1.04;
       canvas.setAttribute('aria-hidden', 'true');
       canvas.tabIndex = -1;
       canvas.dataset.scene = scene;
@@ -195,9 +197,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       container.append(canvas);
       world = new THREE.Scene();
       camera = new THREE.OrthographicCamera(-6, 6, 4, -4, .1, 60);
-      world.add(new THREE.HemisphereLight('#f5faf8', '#81938a', 1.7));
-      const sun = new THREE.DirectionalLight('#fff4df', 3);
-      sun.position.set(-4, 10, 7);
+      world.add(new THREE.HemisphereLight('#e9f4ee', '#3f5c53', 1.4));
+      const sun = new THREE.DirectionalLight('#fff4df', 3.4);
+      sun.position.set(-3.5, 9, 6);
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
       Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 5, bottom: -5, near: 1, far: 25 });
@@ -206,7 +208,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       sun.shadow.radius = 3;
       resources.add(sun.shadow);
       world.add(sun);
-      const fill = new THREE.DirectionalLight('#dce9f3', .75);
+      const fill = new THREE.DirectionalLight('#dce9f3', .95);
       fill.position.set(5, 4, -5);
       world.add(fill);
       buildDiorama();
@@ -241,16 +243,27 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
 
   function buildDiorama() {
     const own = value => { resources.add(value); return value; };
-    const material = (color, extra = {}) => own(new THREE.MeshStandardMaterial({ color, roughness: .82, metalness: 0, ...extra }));
-    const concrete = material('#e5e9dd'), slab = material('#c3d0c2'), pavement = material('#c8d4c8');
-    const road = material('#94afa5'), paint = material('#f5f1df'), park = material('#a9c5a2');
-    const wood = material('#a88c60'), dark = material('#244b46'), trim = material('#e7eddf');
+    const material = (color, extra = {}) => own(new THREE.MeshStandardMaterial({ color, roughness: .78, metalness: 0, ...extra }));
+    const concrete = material('#e2e6d9'), slab = material('#a6b7a9'), pavement = material('#d0d9ca');
+    const road = material('#78958b'), paint = material('#f3efdc'), park = material('#8eaa88');
+    const wood = material('#b59b70'), dark = material('#153f39', { roughness: .42, metalness: .2 }), trim = material('#e9ecdf');
     const boxGeometry = own(new THREE.BoxGeometry(1, 1, 1));
     const bevelGeometry = own(createBevelledBox(THREE));
     const box = (parent, x, y, z, w, h, d, mat, shadow = true, bevel = false) => {
       const mesh = new THREE.Mesh(bevel ? bevelGeometry : boxGeometry, mat);
       mesh.position.set(x, y, z); mesh.scale.set(w, h, d);
       mesh.castShadow = shadow; mesh.receiveShadow = true; parent.add(mesh); return mesh;
+    };
+    // Repeated details are instanced per building, so they follow its selection lift.
+    const details = new Map();
+    const detail = (parent, x, y, z, w, h, d, mat) => {
+      const transform = new THREE.Object3D();
+      transform.position.set(x, y, z);
+      transform.scale.set(w, h, d); transform.updateMatrix();
+      if (!details.has(parent)) details.set(parent, new Map());
+      const batches = details.get(parent);
+      if (!batches.has(mat)) batches.set(mat, []);
+      batches.get(mat).push(transform.matrix.clone());
     };
     box(world, 0, -.29, 0, 8.7, .46, 6.4, slab, true, true);
     box(world, 0, -.045, 0, 8.76, .075, 6.46, concrete, true, true);
@@ -268,14 +281,25 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     box(world, -3.86, .016, 0, .5, .035, 5.65, park, false);
     for (const z of [-.36, .36]) for (let x = -.18; x <= .19; x += .09) box(world, x, .02, z, .045, .008, .16, paint, false);
     const trunkGeometry = own(new THREE.CylinderGeometry(.025, .034, .22, 5));
-    const crownGeometry = own(new THREE.IcosahedronGeometry(.18, 1));
-    const foliage = [material('#6d9b79'), material('#80a989'), material('#a1bb87')];
+    const crownGeometry = own(new THREE.IcosahedronGeometry(.18, 2));
+    const foliage = [material('#557d64'), material('#75977b'), material('#91aa7c')];
     function tree(x, z, index) {
       const trunk = new THREE.Mesh(trunkGeometry, wood); trunk.position.set(x, .13, z); trunk.castShadow = true; world.add(trunk);
       const crown = new THREE.Mesh(crownGeometry, foliage[Math.abs(index) % 3]); crown.position.set(x, .36, z); crown.scale.set(.9, 1.4, .9); crown.castShadow = true; world.add(crown);
     }
-    [-2.3, -1.4, -.5, .5, 1.4, 2.3].forEach((z, i) => { tree(-3.87, z, i); if (i % 2 === 0) box(world, -3.62, .085, z + .2, .12, .09, .28, wood); });
+    [-2.3, -1.4, -.5, .5, 1.4, 2.3].forEach((z, i) => {
+      tree(-3.87, z, i);
+      if (i % 2 === 0) {
+        box(world, -3.62, .09, z + .2, .12, .025, .28, wood);
+        box(world, -3.67, .14, z + .2, .025, .1, .28, wood);
+        for (const offset of [-.09, .09]) detail(world, -3.62, .045, z + .2 + offset, .085, .07, .025, dark);
+      }
+    });
     for (let x = -2.8; x < 3.4; x += 1.25) { tree(x, -2.88, Math.round(x * 10)); tree(x + .35, 2.88, Math.round((x + 4) * 10)); }
+    for (const x of [-2.7, -1.2, 1.2, 2.7]) for (const z of [-2.58, 2.58]) {
+      detail(world, x, .22, z, .018, .43, .018, dark);
+      detail(world, x + .035, .425, z, .09, .018, .038, trim);
+    }
     const labelTexture = (letter, background, foreground) => {
       const label = document.createElement('canvas'); label.width = 96; label.height = 96;
       const context = label.getContext('2d');
@@ -286,7 +310,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       return own(new THREE.SpriteMaterial({ map: texture, depthTest: false, depthWrite: false, transparent: true, toneMapped: false }));
     };
     const windowGeometry = own(new THREE.PlaneGeometry(.055, .09));
-    const windowMaterial = material('#ffffff', { roughness: .45, metalness: .12 });
+    const windowMaterial = material('#ffffff', { roughness: .28, metalness: .28 });
     const windowTransform = new THREE.Object3D();
     const windowColor = new THREE.Color();
     for (const [index, building] of buildings.entries()) {
@@ -295,6 +319,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       group.position.set(position.x, 0, position.z);
       world.add(group);
       const h = building.height / 39, w = building.w * .93, d = building.d * .93;
+      const family = index % 3;
       box(group, 0, .028, 0, w + .16, .055, d + .16, pavement, true, true);
       const initialColor = colorFrame(building);
       const facade = material(initialColor.color);
@@ -307,9 +332,18 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       panel.rotation.x = -.18;
       // Recessed roof and a street entrance make the semantic mass read as architecture.
       box(group, 0, h + .09, 0, w * .84, .018, d * .84, slab, false);
+      // A thin perimeter cap, grouped utilities and glazing give close shots a readable scale.
+      for (const side of [-1, 1]) {
+        detail(group, side * w * .47, h + .115, 0, w * .045, .065, d * .94, trim);
+        detail(group, 0, h + .115, side * d * .47, w * .94, .065, d * .045, trim);
+      }
+      for (let strip = -1; strip <= 1; strip++) detail(group, w * .23 + strip * w * .06, h + .139, d * .18, .006, .008, d * .25, slab);
+      detail(group, -w * .25, h + .126, d * .23, w * .12, .05, d * .16, dark);
       box(group, 0, .15, d / 2 + .006, w * .15, .18, .012, dark, false);
       box(group, 0, .26, d / 2 + .035, w * .31, .025, .1, trim);
-      for (const side of [-1, 1]) box(group, side * w * .37, h / 2 + .07, d / 2 + .006, .018, h * .88, .012, trim, false);
+      if (family !== 1) for (const side of [-1, 1]) for (const face of [-1, 1]) {
+        detail(group, side * w * .37, h / 2 + .07, face * (d / 2 + .012), .018, h * .88, .028, trim);
+      }
       const hatchPoints = [];
       for (let diagonal = -.8; diagonal < .81; diagonal += .18) {
         const start = Math.max(-.48, diagonal - .48), end = Math.min(.48, diagonal + .48);
@@ -321,6 +355,10 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       missingMark.visible = initialColor.missing > 0;
       group.add(missingMark);
       const floors = Math.max(2, Math.floor(h / .19));
+      if (family !== 0) for (let floor = 1; floor < floors; floor++) {
+        const y = .14 + floor * (h - .16) / floors;
+        for (const face of [-1, 1]) detail(group, 0, y, face * (d / 2 + .018), w * .94, .018, family === 2 ? .085 : .035, trim);
+      }
       const windows = new THREE.InstancedMesh(windowGeometry, windowMaterial, floors * 12);
       let windowIndex = 0;
       for (let floor = 0; floor < floors; floor++) for (let column = 0; column < 3; column++) {
@@ -334,7 +372,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
           if (side === 3) windowTransform.position.set(-w / 2 - .003, y, offset);
           windowTransform.updateMatrix();
           windows.setMatrixAt(windowIndex, windowTransform.matrix);
-          windows.setColorAt(windowIndex++, windowColor.set((floor + column + index) % 5 === 0 ? '#eeeacb' : '#234e48'));
+          windows.setColorAt(windowIndex++, windowColor.set((floor + column + index) % 7 === 0 ? '#c9cdb1' : '#214d46'));
         }
       }
       group.add(windows);
@@ -351,6 +389,11 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       const marker = new THREE.Sprite(defaultMarker); marker.position.set(0, h + .38, 0); marker.scale.set(.32, .32, 1); marker.renderOrder = 3; group.add(marker);
       marker.userData.buildingId = building.id;
       objects.push({ id: building.id, group, body, material: facade, targetColor: new THREE.Color(initialColor.color), outline, missingMark, marker, defaultMarker, savedMarker, selectedMarker });
+    }
+    for (const [parent, batches] of details) for (const [mat, transforms] of batches) {
+      const mesh = own(new THREE.InstancedMesh(boxGeometry, mat, transforms.length));
+      transforms.forEach((matrix, index) => mesh.setMatrixAt(index, matrix));
+      mesh.castShadow = true; mesh.receiveShadow = true; parent.add(mesh);
     }
   }
 

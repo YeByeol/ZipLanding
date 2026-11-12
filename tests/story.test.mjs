@@ -153,3 +153,15 @@ test('incoming panel resets stale inner scroll before its first visible frame, n
  panel.scrollTop=45;v.seek(boundary+.007);assert.equal(v.root.dataset.storyPhase,'criteria');assert.equal(panel.scrollTop,45);
  v.controller.destroy();
 });
+
+
+test('entrance channels share the filtered clock, complete in ordinary flow and restore on destroy',()=>{
+ const v=fixture({clock:true}),names=['title','copy','graphic'];
+ assert.ok(names.every(name=>v.panels[0].style.getPropertyValue('--enter-'+name)==='1'));
+ v.seek(0);v.seek(3/7);v.tick(80);
+ const p=+v.root.dataset.filmProgress,expected=filmSnapshot(p).timeline.entrances;
+ for(const panel of v.panels)names.forEach((name,i)=>assert.equal(panel.style.getPropertyValue('--enter-'+name),String(expected[panel.dataset.storyPanel][i])));
+ v.low(true);assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='1')));
+ v.low(false);v.seek(.38,true);assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='1')));
+ v.controller.destroy();assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='')));
+});

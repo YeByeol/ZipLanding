@@ -47,7 +47,8 @@ export function mountStory({root,element,owner,onPhaseChange}) {
   const originalRoot=Object.fromEntries(['storyPhase','storyEnhanced','filmProgress','filmTarget'].map(key=>[key,root?.dataset[key]]));
   const initialMode=element?.dataset.storyMode,captionOpacity=caption?.style.opacity;
   const originalFilmProgress=root?.style?.getPropertyValue?.('--film-progress')??'';
-  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),tabIndex:panel.tabIndex??-1,tabindex:panel.getAttribute('tabindex'),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??'')}));
+  const entranceKeys=['--enter-title','--enter-copy','--enter-graphic'];
+  const originalPanels=panels.map(panel=>({panel,hidden:panel.hidden,inert:Boolean(panel.inert),tabIndex:panel.tabIndex??-1,tabindex:panel.getAttribute('tabindex'),aria:panel.getAttribute('aria-hidden'),opacity:panel.style.opacity,beats:[1,2,3].map(i=>panel.style.getPropertyValue?.('--beat-'+i)??''),entrances:entranceKeys.map(key=>panel.style.getPropertyValue?.(key)??'')}));
   const originalLinks=links.map(link=>({link,aria:link.getAttribute('aria-current')}));
   const viewport=root?.ownerDocument?.defaultView;
   const lowHeight=viewport?.matchMedia?.('(max-height: 620px)');
@@ -77,6 +78,7 @@ export function mountStory({root,element,owner,onPhaseChange}) {
       panel.setAttribute('aria-hidden',String(enhanced&&panel.dataset.storyPanel!==phase));
       panel.inert=enhanced&&panel.dataset.storyPanel!==phase;
       snapshot.beats[panel.dataset.storyPanel]?.forEach((beat,i)=>setBeat(panel,'--beat-'+(i+1),String(beat)));
+      entranceKeys.forEach((key,i)=>setBeat(panel,key,String(enhanced?timeline.entrances[panel.dataset.storyPanel][i]:1)));
     }
     if(chapterSelect)chapterSelect.value=phase;
     const phaseIndex=PHASES.indexOf(phase),focused=document?.activeElement;
@@ -166,7 +168,7 @@ export function mountStory({root,element,owner,onPhaseChange}) {
       if(root)for(const[key,value]of Object.entries(originalRoot)){if(value===undefined)delete root.dataset[key];else root.dataset[key]=value;}
       if(element){if(initialMode===undefined)delete element.dataset.storyMode;else element.dataset.storyMode=initialMode;}
       if(caption)caption.style.opacity=captionOpacity??'';
-      for(const{panel,hidden,inert,tabIndex,tabindex,aria,opacity,beats}of originalPanels){panel.hidden=hidden;panel.inert=inert;panel.tabIndex=tabIndex;if(tabindex===null)panel.removeAttribute('tabindex');else panel.setAttribute('tabindex',tabindex);panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});}
+      for(const{panel,hidden,inert,tabIndex,tabindex,aria,opacity,beats,entrances}of originalPanels){panel.hidden=hidden;panel.inert=inert;panel.tabIndex=tabIndex;if(tabindex===null)panel.removeAttribute('tabindex');else panel.setAttribute('tabindex',tabindex);panel.style.opacity=opacity??'';if(aria===null)panel.removeAttribute('aria-hidden');else panel.setAttribute('aria-hidden',aria);beats.forEach((beat,i)=>{if(beat)setBeat(panel,'--beat-'+(i+1),beat);else panel.style.removeProperty?.('--beat-'+(i+1));});entrances.forEach((value,i)=>{if(value)setBeat(panel,entranceKeys[i],value);else panel.style.removeProperty?.(entranceKeys[i]);});}
       for(const{button,disabled,label}of originalButtons){button.disabled=disabled;if(label===null)button.removeAttribute('aria-label');else button.setAttribute('aria-label',label);}
       for(const{link,aria}of originalLinks){if(aria===null)link.removeAttribute('aria-current');else link.setAttribute('aria-current',aria);}
     },
