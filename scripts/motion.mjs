@@ -11,7 +11,7 @@ export function readingProgress(scrollY, scrollHeight, viewport) {
   return clamp(scrollY / (scrollHeight - viewport));
 }
 
-export function mountMotion({ scenes = [], header, progress }) {
+export function mountMotion({ scenes = [], header, progress, onUpdate }) {
   const preference = window.matchMedia('(prefers-reduced-motion: reduce)');
   const animations = new Set();
   const revealed = new WeakSet();
@@ -47,6 +47,7 @@ export function mountMotion({ scenes = [], header, progress }) {
       progress.style.transform = `scaleX(${amount})`;
       progress.setAttribute('aria-valuenow', String(Math.round(amount * 100)));
     }
+    onUpdate?.({ reduced });
     if (reduced) return;
     for (const { element, owner } of scenes) {
       const rect = element.getBoundingClientRect();

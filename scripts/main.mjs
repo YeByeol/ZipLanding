@@ -2,11 +2,14 @@ import { BUILDINGS, normalizedWeights, scoreBuilding, monthlyUnit, comparisonFor
 import { PALETTES } from './city.mjs';
 import { mountScene3D } from './scene3d.mjs';
 import { mountMotion } from './motion.mjs';
+import { mountStory } from './story.mjs';
 
 const $ = selector => document.querySelector(selector);
 const keys = ['slope', 'elevation', 'age'];
+const params = new URLSearchParams(location.search);
 const initial = parseState(location.search);
-if (!keys.some(key => new URLSearchParams(location.search).has(key))) initial.weights = { slope: 50, elevation: 50, age: 50 };
+if (!['price', 'score', 'value', 'terrain'].includes(params.get('mode'))) initial.mode = 'score';
+if (!keys.some(key => params.has(key))) initial.weights = { slope: 50, elevation: 50, age: 50 };
 let state = initial;
 let toastTimer, announceTimer;
 const format = (value, digits = 0) => Number.isFinite(value) ? value.toLocaleString('ko-KR', { maximumFractionDigits: digits }) : '자료 없음';
@@ -33,10 +36,11 @@ function sceneStatus(name, status) {
   if (caption) caption.textContent = status === 'webgl' ? '드래그로 회전 · 건물을 눌러 선택' : '건물과 조건을 고정 모형으로 살펴보세요.';
 }
 
+const storyElement = $('#story-city');
+const storyOwner = mountScene3D(storyElement, { buildings:BUILDINGS, interactive:false, scene:'hero' });
+const story = mountStory({ root:$('#platform'), element:storyElement, owner:storyOwner });
 const cities = [
-  { name:'hero', element:$('#hero-city'), owner:mountScene3D($('#hero-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'hero', onStatus:s=>sceneStatus('hero',s) }), mode:'price' },
-  { name:'platform', element:$('#platform-city'), owner:mountScene3D($('#platform-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'platform', onStatus:s=>sceneStatus('platform',s) }), mode:null },
-  { name:'experience', element:$('#experience-city'), owner:mountScene3D($('#experience-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'experience', onStatus:s=>sceneStatus('experience',s) }), mode:'score' },
+  { name:'experience', element:$('#experience-city'), owner:mountScene3D($('#experience-city'), { buildings:BUILDINGS, interactive:true, onSelect:select, scene:'experience', onStatus:s=>sceneStatus('experience',s) }) },
 ];
 for (const group of document.querySelectorAll('[data-scene]')) group.addEventListener('click', event => {
   const button = event.target.closest('[data-scene-action]');
@@ -48,7 +52,7 @@ for (const group of document.querySelectorAll('[data-scene]')) group.addEventLis
   else if (button.dataset.sceneAction === 'zoom-out') owner?.zoom(-.15);
   else owner?.rotate(button.dataset.sceneAction === 'left' ? -.3 : .3);
 });
-const motion = mountMotion({ scenes:cities, header:$('.site-header'), progress:$('#reading-progress') });
+const motion = mountMotion({ header:$('.site-header'), progress:$('#reading-progress'), onUpdate: value => story.updateScroll(value) });
 
 // Native buttons mirror every painted building, including the missing-data example.
 for (const building of BUILDINGS) {
@@ -84,7 +88,6 @@ function renderSelection() {
     const item = document.createElement('span'); item.textContent = text; conditions.append(item);
   }
   summary.append(name, score, money, conditions);
-  $('#hero-selection').textContent = `${placeName(building)} · 월세 ${format(building.rent)}만 · ${result.score === null ? '자료 없음' : `내 기준 ${format(result.score)}점`}`;
   if (result.missing.length) { const note = document.createElement('span'); const labels = { slope: '경사', elevation: '고도', age: '연식' }; note.textContent = `자료 없음: ${result.missing.map(key => labels[key]).join(', ')}. 점수 계산에서 제외합니다.`; summary.append(note); }
   const saved = state.saved.includes(state.selected);
   $('#save-selected').disabled = saved;
@@ -111,12 +114,27 @@ function renderComparison() {
   const focusAction = active?.hasAttribute('data-remove') ? 'remove' : 'select';
   places.replaceChildren();
   for (const id of state.saved) {
-    const group = document.createElement('div'); group.className = `saved-place${id === state.selected ? ' is-selected' : ''}`;
-    const choose = document.createElement('button'); choose.type = 'button'; choose.dataset.select = id; choose.textContent = placeName(getBuilding(id)); choose.setAttribute('aria-pressed', String(id === state.selected));
-    const remove = document.createElement('button'); remove.type = 'button'; remove.dataset.remove = id; remove.textContent = '×'; remove.setAttribute('aria-label', `${placeName(getBuilding(id))} 비교에서 빼기`);
+    const building = getBuilding(id);
+    const result = scoreBuilding(building, state.weights);
+    const group = document.createElement('section'); group.className = `saved-place${id === state.selected ? ' is-selected' : ''}`;
+    const choose = document.createElement('button'); choose.type = 'button'; choose.dataset.select = id;
+    choose.setAttribute('aria-pressed', String(id === state.selected));
+    const marker = document.createElement('span'); marker.className = 'place-id'; marker.textContent = id.toUpperCase();
+    const score = document.createElement('strong'); score.className = 'place-score'; score.textContent = result.score === null ? '자료 없음' : format(result.score);
+    if (result.score !== null) { const unit = document.createElement('small'); unit.textContent = '점 / 내 기준'; score.append(unit); }
+    const price = document.createElement('span'); price.className = 'place-price'; price.textContent = `보증금 ${format(building.deposit)}만 · 월세 ${format(building.rent)}만`;
+    const facts = document.createElement('span'); facts.className = 'place-facts'; facts.textContent = `${format(building.area)}㎡ · 경사 ${building.slope === null ? '자료 없음' : `${format(building.slope)}%`} · 고도 ${building.elevation === null ? '자료 없음' : `${format(building.elevation)}m`} · ${building.year === null ? '연식 자료 없음' : `${building.year}년`}`;
+    choose.setAttribute('aria-label', `${placeName(building)} 살펴보기 · ${result.score === null ? '내 기준 점수 자료 없음' : `내 기준 ${format(result.score)}점`} · ${price.textContent} · ${facts.textContent}`);
+    choose.append(marker, score, price, facts);
+    const remove = document.createElement('button'); remove.type = 'button'; remove.dataset.remove = id; remove.textContent = '비교에서 빼기'; remove.setAttribute('aria-label', `${placeName(building)} 비교에서 빼기`);
     group.append(choose, remove); places.append(group);
   }
-  if (focusId) { const target = places.querySelector(`[data-${focusAction}="${focusId}"]`) ?? places.querySelector('button') ?? $('#save-selected'); target.focus({ preventScroll: true }); }
+  if (!state.saved.length) {
+    const empty = document.createElement('p'); empty.className = 'comparison-empty'; empty.textContent = '담은 장소가 없습니다. 내 기준으로 장소를 살펴보고 비교에 담아보세요.';
+    const back = document.createElement('a'); back.href = '#experience'; back.className = 'text-link'; back.textContent = '체험에서 장소 고르기';
+    places.append(empty, back);
+  }
+  if (focusId) { const target = places.querySelector(`[data-${focusAction}="${focusId}"]`) ?? places.querySelector('button') ?? places.querySelector('.text-link') ?? $('#save-selected'); target.focus({ preventScroll: true }); }
   const head = document.createElement('tr'); head.append(cell('비교 기준', { header: true, scope: 'col' }));
   for (const id of state.saved) head.append(cell(placeName(getBuilding(id)), { header: true, scope: 'col', selected: id === state.selected }));
   $('#comparison-head').replaceChildren(head);
@@ -178,7 +196,8 @@ function render({ syncInputs = false } = {}) {
   $('#weights-note').textContent = allZero ? '모두 0이어서 같은 중요도로 계산합니다. 가격은 제외합니다.' : '가격은 점수에 넣지 않습니다.';
   const same = keys.every(key => state.weights[key] === state.weights.slope);
   $('#map-state-label').textContent = same ? '모두 같은 중요도' : '내가 정한 중요도';
-  for (const city of cities) city.owner.update({ ...state, mode: city.mode ?? state.mode });
+  story.update(state);
+  for (const city of cities) city.owner.update(state);
   for (const button of document.querySelectorAll('[data-mode]')) button.setAttribute('aria-pressed', String(button.dataset.mode === state.mode));
   $('#mode-description').textContent = modeDescriptions[state.mode];
   [...$('#platform-legend').querySelectorAll('i')].forEach((item, index) => item.style.backgroundColor = colors[state.mode][index]);
@@ -186,7 +205,7 @@ function render({ syncInputs = false } = {}) {
   $('#share-fallback').hidden = true;
 }
 
-for (const key of keys) $(`#weight-${key}`).addEventListener('input', event => { state.weights[key] = Number(event.target.value); render(); });
+for (const key of keys) $(`#weight-${key}`).addEventListener('input', event => { state.weights[key] = Number(event.target.value); state.mode = 'score'; render(); });
 document.addEventListener('click', event => {
   const choose = event.target.closest('[data-select]');
   if (choose) select(choose.dataset.select);
@@ -201,7 +220,7 @@ $('#save-selected').addEventListener('click', () => {
   state.saved.push(state.selected); render(); toast(`${placeName(selectedBuilding())}를 비교에 담았습니다.`);
 });
 $('#reset-weights').addEventListener('click', () => { state.weights = { slope:50, elevation:50, age:50 }; render({syncInputs:true}); toast('모든 조건을 같은 중요도로 맞췄습니다.'); });
-$('#reset-demo').addEventListener('click', () => { state = { weights:{slope:50,elevation:50,age:50}, selected:'a', saved:['a','b','c'], mode:'price' }; history.replaceState(null,'',location.pathname+location.hash); render({syncInputs:true}); toast('처음의 예시로 돌아왔습니다.'); });
+$('#reset-demo').addEventListener('click', () => { state = { weights:{slope:50,elevation:50,age:50}, selected:'a', saved:['a','b','c'], mode:'score' }; history.replaceState(null,'',location.pathname+location.hash); render({syncInputs:true}); toast('처음의 예시로 돌아왔습니다.'); });
 $('#share-state').addEventListener('click', async () => {
   const url = new URL(location.href); url.search = serializeState(state); url.hash = 'experience';
   try {
@@ -212,7 +231,7 @@ $('#share-state').addEventListener('click', async () => {
   }
 });
 $('#close-share').addEventListener('click', () => { $('#share-fallback').hidden = true; $('#share-state').focus(); });
-window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); cities.forEach(city => city.owner.destroy()); } });
+window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); story.destroy(); storyOwner.destroy(); cities.forEach(city => city.owner.destroy()); } });
 document.querySelectorAll('[data-needs-js]').forEach(control => { control.disabled = false; });
 render({syncInputs:true});
 document.body.classList.add('has-demo');

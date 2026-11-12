@@ -78,11 +78,12 @@ test('motion batches events, stays idle, honors reduced motion and cleans up', a
     disconnect() { disconnected = true; }
   };
   const calls = [];
+  const updates = [];
   const element = { getBoundingClientRect: () => ({ top, height: 400 }) };
   let motion;
   const flush = () => { const callbacks = [...frames.values()]; frames.clear(); callbacks.forEach(callback => callback()); };
   try {
-    motion = mountMotion({ scenes: [{ element, owner: { setProgress: value => calls.push(value) } }], progress });
+    motion = mountMotion({ scenes: [{ element, owner: { setProgress: value => calls.push(value) } }], progress, onUpdate: value => updates.push(value) });
     assert.equal(frames.size, 1);
     window.dispatchEvent(new Event('scroll'));
     window.dispatchEvent(new Event('resize'));
@@ -110,6 +111,8 @@ test('motion batches events, stays idle, honors reduced motion and cleans up', a
     top = -400;
     flush();
     assert.equal(calls.length, 2, 'reduced motion does not move scene cameras');
+    assert.deepEqual(updates.at(-1), { reduced: true }, 'information callback runs before the reduced-motion camera return');
+    assert.equal(updates.length, 4, 'one information update per batched frame');
     window.dispatchEvent(new Event('scroll'));
     document.hidden = true;
     document.dispatchEvent(new Event('visibilitychange'));
