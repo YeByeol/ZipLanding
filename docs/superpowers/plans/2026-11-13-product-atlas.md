@@ -41,5 +41,5 @@
 ### Task 4: Verification and publication
 - [x] Run full tests, syntax/export checks, independent code/content review and bounded visual review at 1440/768/390 plus a short phone.
 - [x] Inspect the no-JS and WebGL fallback, demo preservation, tour intermediate frames, text/background collisions and source claims.
-- [ ] Ensure deployment versions updated local modules as well as CSS, push authorized main, check Pages run and public bytes/browser states.
-- [ ] Record exact verification and remaining limitations; provide public URL and research/design notes.
+- [x] Ensure deployment versions updated local modules as well as CSS, push authorized main, check Pages run and public bytes/browser states.
+- [x] Record exact verification and remaining limitations; provide public URL and research/design notes.
