@@ -42,7 +42,7 @@ test('atelier has six conceptual subjects, a true courtyard void and fully owned
  let disposed=0;
  try {
   assert.deepEqual(atelier.objects.map(item=>item.id),['a','b','c','k','v','x']);
-  assert.equal(atelier.analysisLayers.length,3);
+  assert.equal(atelier.world.children.filter(node=>node.isGroup).length,6,'no floating analysis plates remain');
   const group=atelier.objects[0].group;
   const courtyard=new THREE.Raycaster(new THREE.Vector3(-.13,.48,2),new THREE.Vector3(0,0,-1));
   const wing=new THREE.Raycaster(new THREE.Vector3(.4,.48,2),new THREE.Vector3(0,0,-1));
@@ -52,4 +52,25 @@ test('atelier has six conceptual subjects, a true courtyard void and fully owned
   for(const resource of atelier.resources)resource.addEventListener('dispose',()=>disposed++);
  }finally{atelier.dispose();}
  assert.equal(disposed,atelier.resources.size,'all geometries, materials and marker textures are disposed');
+});
+
+test('new architectural detail stays within the authored collision envelope and GPU budget',()=>{
+ const atelier=productionAtelier();
+ try {
+  for(const {group,body,material} of atelier.objects) {
+   const solids=group.children.filter(node=>node.isMesh);
+   const bounds=new THREE.Box3();
+   for(const solid of solids)bounds.union(new THREE.Box3().setFromObject(solid));
+   assert.ok(bounds.min.x>=-.86&&bounds.max.x<=.86);
+   assert.ok(bounds.min.z>=-.73&&bounds.max.z<=.73);
+   assert.ok(bounds.min.y>=-.001&&bounds.max.y<=1.30);
+   assert.ok(solids.length<=40,'one subject uses at most forty draw calls before shadows');
+   assert.ok(solids.some(node=>node.isInstancedMesh&&node.count>30),'small repeated parts use instancing');
+   assert.ok(solids.filter(node=>node.isInstancedMesh).every(mesh=>atelier.resources.has(mesh)),'instanceMatrix buffers are owned and disposed with the scene');
+   assert.ok(solids.some(node=>node.geometry.type==='RoundedBoxGeometry'),'official r187 addon constructs the physical edge radii');
+   assert.ok(solids.some(node=>node.material.isMeshPhysicalMaterial),'glazing receives physical environment reflections');
+   assert.equal(body.material,material,'live data color continues to drive the load-bearing facade');
+   for(const solid of solids)assert.ok([...solid.geometry.attributes.normal.array].every(Number.isFinite));
+  }
+ } finally {atelier.dispose();}
 });

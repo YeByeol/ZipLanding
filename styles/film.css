@@ -12,7 +12,7 @@
 .story-city canvas,.story-city canvas:active{cursor:default}
 .story-panel{--beat-1:1;--beat-2:1;--beat-3:1;--enter-title:1;--enter-copy:1;--enter-graphic:1;position:relative;padding-block:64px}
 .story-copy{max-width:650px;text-align:left}
-.story-copy h2{font-size:var(--film-display);line-height:1.1;font-weight:530;letter-spacing:-.055em;text-wrap:balance}
+.story-copy h2{font-size:var(--film-display);line-height:1.1;font-weight:530;letter-spacing:-.04em;text-wrap:balance}
 .story-copy>p{max-width:38ch;margin-top:24px;font-size:18px;line-height:1.65;letter-spacing:-.015em;color:var(--film-muted)}
 .film-static-poster{display:block;width:min(100%,900px);height:clamp(240px,48vw,540px);object-fit:contain;margin:32px auto}
 .film:not([data-story-enhanced=true])>.story-stage>#story-city{display:none}
@@ -33,7 +33,7 @@
 .hud-price-facts dt{font-size:14px;line-height:1.45;color:var(--film-muted)}
 .hud-price-facts dd{display:flex;align-items:baseline;gap:6px;margin-top:8px;font-size:38px;line-height:1.15;font-weight:450;letter-spacing:-.04em;white-space:nowrap}
 .film-price-part-1{grid-column:1/-1}
-.film-price-part-1 dd{font-size:clamp(100px,9.5vw,144px);line-height:.92;margin-top:10px;gap:20px;letter-spacing:-.065em}
+.film-price-part-1 dd{font-size:clamp(100px,9.5vw,144px);line-height:.92;margin-top:10px;gap:20px;letter-spacing:-.04em}
 .film-price-part-1 .hud-unit{font-size:17px}.film-price-part-1 .hud-period{display:block;margin-top:4px}
 .film-price-part-1{transform:translateY(calc((1 - var(--beat-1))*10px))}
 .film-price-part-2{opacity:calc(.5 + .5*var(--beat-2));transform:translateY(calc((1 - var(--beat-2))*8px))}
@@ -42,7 +42,7 @@
 .hud-condition-facts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:40px}
 .film-condition dt{font-size:15px;line-height:1.5;color:var(--ink)}
 .film-condition dt small{display:block;margin-top:3px;font-size:13px;color:var(--film-muted)}
-.film-condition dd{display:flex;align-items:baseline;gap:8px;margin-top:12px;font-size:64px;line-height:1;font-weight:430;letter-spacing:-.05em;white-space:nowrap}
+.film-condition dd{display:flex;align-items:baseline;gap:8px;margin-top:12px;font-size:64px;line-height:1;font-weight:430;letter-spacing:-.04em;white-space:nowrap}
 .film-condition--1{opacity:calc(.45 + .55*var(--beat-1));transform:translateY(calc((1 - var(--beat-1))*8px))}
 .film-condition--2{opacity:calc(.45 + .55*var(--beat-2));transform:translateY(calc((1 - var(--beat-2))*8px))}
 .film-condition--3{opacity:calc(.45 + .55*var(--beat-3));transform:translateY(calc((1 - var(--beat-3))*8px))}
@@ -85,7 +85,7 @@
 /* Value: one conversion, then three comparable lengths from zero. */
 .hud-value-heading{display:flex;align-items:center;justify-content:space-between;gap:20px}
 .hud-value-heading .hud-meta{display:block;margin-top:4px}
-.hud-value-result{display:flex;align-items:baseline;gap:8px;font-size:72px;line-height:1;font-weight:430;letter-spacing:-.055em}
+.hud-value-result{display:flex;align-items:baseline;gap:8px;font-size:72px;line-height:1;font-weight:430;letter-spacing:-.04em}
 .hud-value-result small{font-size:13px;line-height:1.4;font-weight:450;letter-spacing:0;white-space:nowrap;color:var(--film-muted)}
 .hud-chart-context{font-size:13px;line-height:1.5;color:var(--film-muted);margin-top:24px}.hud-chart-context b{font-weight:550;color:var(--ink)}
 .film-price-chart{display:grid;gap:16px;margin-top:18px}
@@ -114,14 +114,9 @@
 .film-discover-mark>p strong{font-weight:550}
 .film-discover-mark .film-scroll-hint{font-size:13px;color:var(--film-muted);margin-top:8px}
 .film-discover-mark .film-piece-3{opacity:1;transform:none}
-.film-closing-seal{position:relative;width:240px;height:82px;margin-bottom:28px}
-.film-z{display:block;width:100%;height:100%}.film-z path{fill:none;stroke:var(--ink);stroke-width:2;stroke-linecap:square;stroke-dasharray:1;stroke-dashoffset:calc(1 - var(--beat-1))}
-.film-closing-seal .film-z{opacity:calc(1 - var(--beat-2))}.film-closing-seal img{position:absolute;inset:0;width:100%;height:100%;object-fit:contain}
 .film-closing-mark>p{font-size:18px;line-height:1.6;margin-bottom:28px}.film-closing-mark>p>span{font-size:14px;color:var(--film-muted)}
 .film-closing-action{pointer-events:auto;min-height:58px;width:100%;max-width:380px;justify-content:space-between}
 .film-piece-1{opacity:var(--beat-1);transform:translateY(calc((1 - var(--beat-1))*10px))}.film-piece-2{opacity:var(--beat-2);transform:translateY(calc((1 - var(--beat-2))*10px))}.film-piece-3{opacity:var(--beat-3);transform:translateY(calc((1 - var(--beat-3))*10px))}
-#story-connections{display:none;position:absolute;inset:0;width:100%;height:100%;z-index:1;pointer-events:none;overflow:hidden}
-#story-connections path{fill:none;stroke:rgb(23 61 51 / .35);stroke-width:1;vector-effect:non-scaling-stroke}.story-connection-ring{display:none}
 /* Reserved navigation, independent of every chapter's composition. */
 .story-dock{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);gap:12px 24px;align-items:center;margin-top:32px;padding:14px var(--gutter) calc(14px + env(safe-area-inset-bottom,0px));background:var(--paper);color:var(--ink)}
 .story-disclosure{min-width:0}.film-disclosure{font-size:13px;line-height:1.5;color:var(--film-muted)}
@@ -142,7 +137,6 @@
 .story[data-story-enhanced=true] .story-waypoint:nth-child(2){top:140svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(3){top:280svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(4){top:420svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(5){top:560svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(6){top:700svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(7){top:840svh}.story[data-story-enhanced=true] .story-waypoint:nth-child(8){top:980svh}
 .story[data-story-enhanced=true] .story-stage{position:sticky;top:var(--header);height:calc(100svh - var(--header));display:grid;grid-template-rows:minmax(0,1fr) auto;padding:0}
 .story[data-story-enhanced=true] .story-city{position:absolute;inset:0;width:100%;height:100%;margin:0;z-index:0}
-.story[data-story-enhanced=true] #story-connections{display:block}
 .story[data-story-enhanced=true] .story-panels{position:relative;grid-row:1;display:grid;grid-template:minmax(0,1fr) / minmax(0,1fr);min-height:0;z-index:2}
 .story[data-story-enhanced=true] .story-panel{grid-area:1/1;position:relative;min-height:0;display:grid;grid-template-columns:repeat(12,minmax(0,1fr));grid-template-rows:auto minmax(24px,1fr) auto;gap:0 24px;padding:32px var(--gutter) 24px;overflow-y:auto;overflow-x:hidden;scrollbar-color:var(--ink) var(--paper);scrollbar-width:thin;touch-action:pan-y pinch-zoom}
 .story[data-story-enhanced=true] .story-panel:focus-visible{outline-offset:-3px}
@@ -176,7 +170,7 @@
 .film-weights{gap:13px}.film-weight-row strong{font-size:25px}.film-bar-track{height:6px;margin-top:7px}.hud-score-summary{margin-top:18px;padding:14px 16px}.film-score-trio{margin-top:12px}.film-score-trio strong{font-size:28px}
 .story[data-story-enhanced=true] .film-panel--comparison .story-copy h2{font-size:40px}.film-compare-matrix th,.film-compare-matrix td{padding:2px 10px;font-size:14px}.film-compare-matrix th:first-child{font-size:13px}.film-matrix-score td{font-size:28px;padding-bottom:7px}.film-matrix-score th{padding-bottom:7px}.hud-comparison-context{margin-bottom:10px}
 .hud-value-result{font-size:56px}.hud-chart-context{margin-top:16px}.film-price-chart{gap:12px;margin-top:12px}.film-price-bar-track{height:9px}.hud-calculation{margin-top:16px;padding:12px 14px}
-.film-missing-strip dl{gap:18px 24px}.hud-source-plan{margin-top:20px;padding:14px 16px}.film-closing-seal{width:200px;height:68px;margin-bottom:20px}.film-closing-mark>p{margin-bottom:20px}
+.film-missing-strip dl{gap:18px 24px}.hud-source-plan{margin-top:20px;padding:14px 16px}.film-closing-mark>p{margin-bottom:20px}
 }
 @media(max-width:1100px) and (min-width:761px){.story[data-story-enhanced=true] .story-panel{column-gap:18px}.story[data-story-enhanced=true] .film-panel--price .story-copy,.story[data-story-enhanced=true] .film-panel--criteria .story-copy,.story[data-story-enhanced=true] .film-panel--value .story-copy,.story[data-story-enhanced=true] .film-graphic--price,.story[data-story-enhanced=true] .film-graphic--criteria,.story[data-story-enhanced=true] .film-graphic--value{grid-column:7/-1}.story[data-story-enhanced=true] .film-graphic--evidence{grid-column:1/6}}
 @media(min-width:761px) and (max-width:1100px){
@@ -206,10 +200,10 @@
 .hud-price-facts{gap:18px 22px}.hud-price-facts dd{font-size:27px;gap:5px}.film-price-part-1 dd{font-size:72px;gap:10px}.film-price-part-1 .hud-unit{font-size:14px}
 .hud-condition-facts{gap:16px;grid-template-columns:.8fr 1fr 1.4fr}.film-condition dt{font-size:14px}.film-condition dd{font-size:clamp(28px,8vw,40px);margin-top:10px;gap:4px}.film-condition dt small{display:none}.film-condition-layers .hud-footnote{margin-top:18px}
 .film-weight-row>div:first-child{font-size:13px;gap:5px;white-space:nowrap}.film-weight-row strong{font-size:28px}.film-bar-track{height:6px;margin-top:9px}.hud-score-summary{margin-top:18px;padding:16px}.hud-score-summary>p{font-size:13px}.hud-score-summary>p>span{font-size:13px}.film-score-trio{gap:10px;margin-top:14px}.film-score-trio>div{gap:7px}.film-score-trio strong{font-size:27px}.film-score-trio small{font-size:12px}.film-score-trio .hud-place{width:23px;height:23px;font-size:14px}
-.hud-comparison-context{font-size:13px;margin-bottom:10px}.film-compare-matrix th,.film-compare-matrix td{font-size:14px;line-height:1.4;padding:3px 3px}.film-compare-matrix th:first-child{width:31%;font-size:13px}.film-compare-matrix thead th{padding-block:5px}.film-matrix-score td{font-size:27px;padding-block:4px 8px}.film-matrix-score th{padding-bottom:8px}.hud-table-unit{font-size:12px;margin-left:2px}.film-matrix-year th,.film-matrix-year td{padding-bottom:6px}
+.hud-comparison-context{font-size:13px;margin-bottom:10px}.film-compare-matrix th,.film-compare-matrix td{font-size:14px;line-height:1.4;padding:3px 3px}.film-compare-matrix th:first-child{width:22%;font-size:13px}.film-compare-matrix thead th{padding-block:5px}.film-matrix-score td{font-size:27px;padding-block:4px 8px}.film-matrix-score th{padding-bottom:8px}.hud-table-unit{font-size:12px;margin-left:2px}.film-matrix-year th,.film-matrix-year td{padding-bottom:6px}
 .hud-value-result{font-size:48px;gap:6px}.hud-value-heading{gap:14px}.hud-chart-context{margin-top:16px}.film-price-chart{gap:12px;margin-top:14px}.film-price-column{gap:14px;grid-template-columns:25px minmax(0,1fr) 44px}.film-price-column>span{font-size:17px}.film-price-bar-track{height:9px}.hud-calculation{margin-top:18px;padding:12px 14px}.hud-calculation p{font-size:14px}.hud-calculation p+p{font-size:13px}.film-price-comparison>.hud-footnote{font-size:13px;margin-top:10px}
 .film-missing-strip dl{gap:18px 24px}.film-missing-strip dd{font-size:15px}.hud-missing-mark{font-size:20px;margin-right:8px}.film-missing-strip .hud-footnote{font-size:14px;margin-top:20px}.hud-source-plan{margin-top:20px;padding:14px 16px}.hud-source-plan>p{font-size:13px}.film-provenance{font-size:13px;gap:12px;margin-top:10px}
-.film-start{width:240px;min-height:54px;font-size:15px;padding:14px 20px}.film-discover-mark>p{font-size:14px;margin-top:20px}.film-discover-mark .film-scroll-hint{font-size:13px;margin-top:6px}.film-closing-seal{width:172px;height:58px;margin-bottom:22px}.film-closing-mark>p{font-size:16px;margin-bottom:22px}.film-closing-mark>p>span{font-size:13px}.film-closing-action{min-height:54px;font-size:15px;max-width:100%}
+.film-start{width:240px;min-height:54px;font-size:15px;padding:14px 20px}.film-discover-mark>p{font-size:14px;margin-top:20px}.film-discover-mark .film-scroll-hint{font-size:13px;margin-top:6px}.film-closing-mark>p{font-size:16px;margin-bottom:22px}.film-closing-mark>p>span{font-size:13px}.film-closing-action{min-height:54px;font-size:15px;max-width:100%}
 .story-dock{padding-inline:var(--gutter)}.story-actions{width:min(100%,300px)}.story-step-button{padding:10px;min-width:44px}.story-button-text{display:none}.story .map-legend{gap:2px}.story .map-legend i{width:10px;height:5px}.story .map-legend span:first-child{margin-right:4px}.story .map-legend span:last-child{margin-left:4px}
 }
 @media(max-width:760px) and (min-height:621px){
@@ -224,7 +218,7 @@
 .film-weight-row strong{font-size:24px}.film-bar-track{height:5px;margin-top:7px}.hud-score-summary{margin-top:16px;padding:14px}.hud-score-summary>p>span .hud-score-scale{display:none}.film-score-trio{margin-top:12px}.film-score-trio strong{font-size:24px}
 .film-compare-matrix th,.film-compare-matrix td{font-size:13px;line-height:1.35;padding:2px 2px}.film-compare-matrix th:first-child{font-size:13px}.film-compare-matrix thead th{padding-block:4px}.film-matrix-score td{font-size:24px;line-height:1.25;padding-bottom:6px}.film-matrix-score th{padding-bottom:6px}.hud-comparison-context{margin-bottom:8px}
 .hud-value-result{font-size:40px}.hud-chart-context{margin-top:12px}.film-price-chart{gap:8px;margin-top:10px}.film-price-column{grid-template-columns:23px minmax(0,1fr) 42px;gap:10px}.film-price-column>.hud-place{width:23px;height:23px;font-size:13px}.film-price-column>span{font-size:16px;line-height:1.25}.film-price-bar-track{height:7px}.hud-calculation{margin-top:12px;padding:10px 12px}.hud-calculation p{font-size:13px}.film-price-comparison>.hud-footnote{font-size:13px;line-height:1.4;margin-top:8px}
-.hud-source-plan{margin-top:16px;padding:12px 14px}.film-missing-strip dl{gap:12px}.film-missing-strip dd{font-size:15px}.film-missing-strip .hud-footnote{margin-top:16px}.hud-missing-mark{font-size:18px;margin-right:6px}.film-closing-seal{width:144px;height:48px;margin-bottom:18px}
+.hud-source-plan{margin-top:16px;padding:12px 14px}.film-missing-strip dl{gap:12px}.film-missing-strip dd{font-size:15px}.film-missing-strip .hud-footnote{margin-top:16px}.hud-missing-mark{font-size:18px;margin-right:6px}
 }
 @media(max-width:370px){
 .story{--gutter:20px;--film-display:28px}.story-copy>p{font-size:15px}.hud-heading{gap:10px}.hud-heading-main{gap:8px}.hud-score-summary>p>span .hud-score-scale{display:none}.film-score-trio>div{gap:5px}.film-score-trio strong{font-size:23px}.film-score-trio small{font-size:12px}.hud-value-result{font-size:37px;gap:5px}.atelier-page .header-action{gap:10px;padding-inline:10px}
@@ -232,5 +226,16 @@
 @media(prefers-reduced-motion:reduce){
 .film-piece-1,.film-piece-2,.film-piece-3,.film-price-part,.film-condition,.film-score-trio>div,.film-provenance,.hud-cell{transform:none}
 .story[data-story-enhanced=true] .story-copy h2,.story[data-story-enhanced=true] .story-copy>p,.story[data-story-enhanced=true] .film-graphic{transform:none;opacity:1}
-#story-connections{display:none!important}
+}
+
+/* A legend explains the score comparison; quiet chapters keep this space clear. */
+.story-legend-label{margin-right:10px;color:var(--ink)}
+@media(max-width:760px){.story-legend-label{font-size:12px;margin-right:5px}.story .map-legend{font-size:12px}.film-disclosure{font-size:12px}}
+
+/* A quiet reading plane keeps moving subjects behind, never through the copy. */
+@media(min-height:621px){
+.story[data-story-enhanced=true] .story-copy,
+.story[data-story-enhanced=true] .film-graphic{isolation:isolate;background:var(--paper)}
+.story[data-story-enhanced=true] .story-copy::before,
+.story[data-story-enhanced=true] .film-graphic::before{content:"";position:absolute;inset:-8px;z-index:-1;background:var(--paper);pointer-events:none}
 }

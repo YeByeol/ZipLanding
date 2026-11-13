@@ -2,8 +2,9 @@ import { compositionProjection, fitOrthographicBounds, storyWorldBounds } from '
 import { BUILDINGS } from './demo.mjs';
 import { PALETTES, colorFrameForTransition, mountCity } from './city.mjs';
 import { DEFAULT_VIEW, clampView, clampProgress, clampZoom, viewForProgress, dragIntent, isClick, buildingPosition, cameraPreset, clampPresentation, presentationForProgress } from './scene-model.mjs';
-import { clampFormation, formationPose, formationLayers } from './scene-formation.mjs';
+import { clampFormation, formationPose, neighborhoodPresence } from './scene-formation.mjs';
 import { mountAtelier } from './atelier-svg.mjs';
+import { buildNeighborhood } from './atelier-neighborhood.mjs';
 
 let threePromise;
 const loadThree = () => threePromise ||= import('../vendor/three.module.js');
@@ -27,10 +28,10 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   let zoom = 1, targetZoom = 1, preset = 'scroll';
   let target = { x: 0, y: .28, z: 0 }, targetCenter = { ...target };
   let reduced = motion.matches, destroyed = false, initialized = false, visible = true, lost = false;
-  let renderer, world, camera, canvas, THREE, frame = 0, previousTime = 0, hovered = null, pointer = null;
+  let renderer, world, camera, canvas, THREE, atelierTools, neighborhood, frame = 0, previousTime = 0, hovered = null, pointer = null;
   let resizeObserver, visibilityObserver, entryObserver, sceneBounds, storyFit, storyComposition;
   const objects = [], resources = new Set(), listeners = [], paintListeners = new Set();
-  let formation=clampFormation(), analysisLayers=[], atelierShadow, fallbackFrame;
+  let formation=clampFormation(), fallbackFrame;
   let anchorPoint, anchorScale;
   const tooltip = document.createElement('div');
   tooltip.className = 'scene-tooltip'; tooltip.hidden = true; tooltip.setAttribute('aria-hidden', 'true');
@@ -95,7 +96,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
         const fit = fitOrthographicBounds(sceneBounds, camera.matrixWorldInverse.elements, { width, height, ...storyFit });
         if (fit) { projection = fit; zoom = fit.zoom; }
       } else if (storyOwned() && storyComposition) {
-        const composed = compositionProjection({width,height,zoom,composition:storyComposition,maxMobileWidth:420});
+        const cap=phase=>phase==='comparison'?760:420;
+        const mobileWidthCap=cap(formation.from)+(cap(formation.to)-cap(formation.from))*formation.mix;
+        const composed = compositionProjection({width,height,zoom,composition:storyComposition,maxMobileWidth:mobileWidthCap});
         if (composed) { projection = composed; zoom = composed.zoom; }
       }
       if (Object.entries(projection).some(([key, value]) => camera[key] !== value)) {
@@ -148,14 +151,12 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       item.marker.visible = pose ? pose.scale>.001 : interactive || selected || highlighted || (!storyOwned() && state.saved.includes(item.id));
       item.marker.material = item.atelier ? ['a','x'].includes(item.id)?item.selectedMarker:item.savedMarker : selected ? item.selectedMarker : state.saved.includes(item.id) || highlighted ? item.savedMarker : item.defaultMarker;
     }
-    const layers=formationLayers(formation);
-    if(atelierShadow)atelierShadow.position.y=-.055-layers*.85;
-    analysisLayers.forEach((layer,i)=>{
-      layer.visible=layers>.001;
-      layer.scale.setScalar(Math.max(.0001,layers));
-      layer.position.set((i-1)*.26*layers,-.20-i*.27*layers,0);
-      layer.rotation.y=(i-1)*.14*layers;
-    });
+    if(neighborhood){
+      const pose=formationPose('a',formation);
+      neighborhood.group.position.set(pose.x,pose.y,pose.z);
+      neighborhood.group.scale.setScalar(Math.max(.0001,pose.scale));
+      neighborhood.setVisibility(neighborhoodPresence(formation));
+    }
     positionCamera();
     try {
       renderer.render(world, camera);
@@ -194,6 +195,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
     initialized = true;
     try {
       THREE = await loadThree();
+      if (!interactive) atelierTools = await import('./atelier-architecture.mjs');
       if (destroyed) return;
       // Supplying a checked context avoids Three's error log on unsupported devices.
       canvas = document.createElement('canvas');
@@ -214,26 +216,32 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
       if (getComputedStyle(container).position === 'static') container.style.position = 'relative';
       container.append(canvas);
       world = new THREE.Scene();
+      if (!interactive) atelierTools.lightAtelier(renderer, world, resources);
       camera = new THREE.OrthographicCamera(-6, 6, 4, -4, .1, 60);
-      world.add(new THREE.HemisphereLight('#e9f4ee', '#3f5c53', 1.4));
-      const sun = new THREE.DirectionalLight('#fff4df', 3.4);
+      world.add(new THREE.HemisphereLight('#eef4ef', '#607064', interactive ? 1.4 : .75));
+      const sun = new THREE.DirectionalLight('#fff4df', interactive ? 3.4 : 2.4);
       sun.position.set(-3.5, interactive ? 9 : 13, interactive ? 6 : 4);
       sun.castShadow = true;
       sun.shadow.mapSize.set(1024, 1024);
-      Object.assign(sun.shadow.camera, { left: -6, right: 6, top: 5, bottom: -5, near: 1, far: 25 });
-      sun.shadow.bias = -.0007;
-      sun.shadow.normalBias = .035;
+      Object.assign(sun.shadow.camera, { left: interactive ? -6 : -4, right: interactive ? 6 : 4, top: interactive ? 5 : 4, bottom: interactive ? -5 : -4, near: 1, far: 25 });
+      sun.shadow.bias = interactive ? -.0007 : -.00025;
+      sun.shadow.normalBias = interactive ? .035 : .008;
       sun.shadow.radius = 3;
       resources.add(sun.shadow);
       world.add(sun);
-      const fill = new THREE.DirectionalLight('#dce9f3', .95);
+      const fill = new THREE.DirectionalLight('#dce9f3', interactive ? .95 : .65);
       fill.position.set(5, 4, -5);
       world.add(fill);
       if (interactive) buildDiorama(); else buildAtelier();
       sceneBounds = storyWorldBounds(world, THREE);
       bindPointers();
       listen(canvas, 'webglcontextlost', event => { event.preventDefault(); lost = true; fallbackMode(); });
-      listen(canvas, 'webglcontextrestored', () => { lost = false; resize(); requestRender(); });
+      listen(canvas, 'webglcontextrestored', () => {
+        try {
+          if (!interactive) atelierTools.lightAtelier(renderer, world, resources);
+          lost = false; resize(); requestRender();
+        } catch { lost = true; fallbackMode(); }
+      });
       if ('IntersectionObserver' in window) {
         visibilityObserver = new IntersectionObserver(entries => {
           visible = entries[0].isIntersecting;
@@ -416,66 +424,9 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
   }
 
   function buildAtelier() {
-    const own=value=>{resources.add(value);return value;};
-    const material=(color,extra={})=>own(new THREE.MeshStandardMaterial({color,roughness:.65,metalness:0,...extra}));
-    const chalk=material('#e5ebe5'),edge=material('#f3f5ed'),forest=material('#194b3e'),glass=material('#153c36',{roughness:.22,metalness:.24}),roof=material('#afc2b5');
-    const bevel=own(createBevelledBox(THREE)),unit=own(new THREE.BoxGeometry(1,1,1));
-    const box=(parent,x,y,z,w,h,d,mat,rounded=false)=>{
-      const mesh=new THREE.Mesh(rounded?bevel:unit,mat);
-      mesh.position.set(x,y,z);mesh.scale.set(w,h,d);mesh.castShadow=true;mesh.receiveShadow=true;parent.add(mesh);return mesh;
-    };
-    const markerMaterial=(letter,color)=>{
-      const label=document.createElement('canvas');label.width=128;label.height=128;const ctx=label.getContext('2d');
-      ctx.fillStyle=color;ctx.beginPath();ctx.arc(64,64,54,0,Math.PI*2);ctx.fill();
-      ctx.fillStyle='#ffffff';ctx.font='500 60px sans-serif';ctx.textAlign='center';ctx.textBaseline='middle';ctx.fillText(letter,64,67);
-      const texture=own(new THREE.CanvasTexture(label));texture.colorSpace=THREE.SRGBColorSpace;
-      return own(new THREE.SpriteMaterial({map:texture,depthTest:false,depthWrite:false,transparent:true,toneMapped:false}));
-    };
-    // These six architectural studies are illustrative models, never measured floor plans.
-    for(const [index,id] of ['a','b','c','k','v','x'].entries()) {
-      const building=buildings.find(item=>item.id===id);if(!building)continue;
-      const group=new THREE.Group();world.add(group);
-      const initial=colorFrame(building),facade=material(initial.color);
-      box(group,0,.04,0,1.72,.14,1.46,chalk,true);
-      box(group,0,.125,0,1.57,.035,1.31,edge,true);
-      // Two wings and an elevated rear volume leave a genuinely open courtyard.
-      box(group,-.52,.48,.03,.43,.68,1.04,chalk,true);
-      const body=box(group,.40,.55,.04,.57,.82,1.02,facade,true);body.userData.buildingId=id;
-      box(group,-.10,.80,-.40,1.22,.30,.37,chalk,true);
-      box(group,.29,1.03,-.21,.76,.30,.71,forest,true);
-      box(group,.29,1.19,-.21,.80,.045,.75,edge,true);
-      box(group,.29,1.218,-.21,.63,.018,.58,roof);
-      box(group,-.52,.83,.03,.47,.035,1.08,edge,true);
-      box(group,-.52,.855,.03,.36,.016,.93,roof);
-      box(group,.4,.97,.39,.61,.035,.35,edge,true);
-      // Deep glazing and mullions read as architectural apertures at a distance.
-      box(group,-.52,.48,.562,.29,.43,.022,glass);
-      box(group,.4,.56,.565,.41,.46,.022,glass);
-      box(group,.29,1.04,.157,.60,.19,.018,glass);
-      for(const x of [-.59,-.45,.28,.42,.56]) box(group,x,.49,.58,.012,.43,.025,edge);
-      for(const z of [-.15,.03,.21,.39]) box(group,.695,.56,z,.018,.46,.012,edge);
-      box(group,.69,.56,.09,.018,.46,.85,glass);
-      // Low courtyard wall, inset paving and two steps give the void a human scale.
-      box(group,-.13,.15,.12,.35,.02,.75,roof);
-      box(group,-.13,.18,.57,.35,.06,.12,edge);
-      box(group,-.13,.16,.69,.43,.025,.12,chalk);
-      box(group,-.30,.23,.36,.04,.18,.34,forest);
-      if(index%2)box(group,-.48,.22,-.52,.44,.12,.13,forest);
-      const missingGeometry=own(new THREE.BufferGeometry().setFromPoints(Array.from({length:6},(_,i)=>[new THREE.Vector3(-.02+i*.10,1.23,-.45),new THREE.Vector3(.13+i*.10,1.23,.02)]).flat()));
-      const missingMark=new THREE.LineSegments(missingGeometry,own(new THREE.LineBasicMaterial({color:'#52675b',transparent:true,opacity:initial.missing*.8})));
-      missingMark.visible=initial.missing>0;group.add(missingMark);
-      const outline=new THREE.Group();group.add(outline);
-      const letter=id.toUpperCase(),defaultMarker=markerMaterial(letter,'#315b4d'),savedMarker=markerMaterial(letter,'#72548e'),selectedMarker=markerMaterial(letter,'#194b3e');
-      const marker=new THREE.Sprite(defaultMarker);marker.position.set(.1,1.42,-.12);marker.scale.set(.3,.3,1);marker.renderOrder=3;marker.userData.buildingId=id;group.add(marker);
-      objects.push({id,group,body,material:facade,targetColor:new THREE.Color(initial.color),outline,missingMark,marker,defaultMarker,savedMarker,selectedMarker,atelier:true});
-    }
-    for(const color of ['#c8d8c9','#d5c6a1','#c9b9df']) {
-      const layer=new THREE.Group();
-      box(layer,0,0,0,2.0,.035,1.72,material(color),true);
-      layer.visible=false;world.add(layer);analysisLayers.push(layer);
-    }
-    const shadow=new THREE.Mesh(own(new THREE.PlaneGeometry(24,24)),own(new THREE.ShadowMaterial({color:'#214e3c',opacity:.12})));
-    shadow.rotation.x=-Math.PI/2;shadow.position.y=-.055;shadow.receiveShadow=true;world.add(shadow);atelierShadow=shadow;
+    objects.push(...atelierTools.createAtelierModels({ world, resources, buildings, colorFrame, document }));
+    neighborhood=buildNeighborhood({THREE,remember:value=>resources.add(value)});
+    world.add(neighborhood.group);
   }
 
   function bindPointers() {

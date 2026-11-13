@@ -19,7 +19,7 @@ test('one timeline holds each reading pose and uses smooth, history-free transit
     }
     const center = storyTimeline(boundary);
     assert.ok(Math.abs(center.blend - .5) < 1e-12);
-    assert.deepEqual(center.opacities, Array(8).fill(0), 'quiet middle keeps the city visible without overlapping titles');
+    assert.deepEqual(center.opacities, Array(8).fill(0), 'only the handoff point hides both panels without overlapping titles');
     const epsilon = 1e-6;
     for (const edge of [boundary - timelineModule.TRANSITION_WINDOW, boundary + timelineModule.TRANSITION_WINDOW]) {
       const speed = Math.abs(storyTimeline(edge + epsilon).blend - storyTimeline(edge - epsilon).blend) / (2 * epsilon);
@@ -73,12 +73,50 @@ test('large camera transitions use the wider shared progress window before each 
  assert.equal(frame.from,'discover');assert.equal(frame.to,'price');assert.ok(frame.blend<1&&frame.blend>0);
 });
 
+test('each handoff keeps copy readable through most of the camera move without overlapping panels',()=>{
+ const {storyTimeline,PHASES,TRANSITION_WINDOW:window}=timelineModule;
+ const samples=2000,step=2*window/samples;
+ for(let i=0;i<PHASES.length-1;i++){
+  const boundary=(i+.5)/7;
+  let unreadable=0,longestUnreadable=0,empty=0,longestEmpty=0;
+  for(let sample=0;sample<=samples;sample++){
+   const frame=storyTimeline(boundary-window+step*sample);
+   assert.ok(frame.opacities.filter(alpha=>alpha>0).length<=1,'outgoing and incoming panels never overlap');
+   const copy=frame.opacities.map((alpha,j)=>alpha*frame.entrances[PHASES[j]][1]);
+   unreadable=Math.max(...copy)<.5?unreadable+1:0;
+   empty=Math.max(...frame.opacities)===0?empty+1:0;
+   longestUnreadable=Math.max(longestUnreadable,unreadable);
+   longestEmpty=Math.max(longestEmpty,empty);
+  }
+  assert.ok(longestEmpty<=1,`${PHASES[i]} handoff has no fully empty progress interval`);
+  assert.ok(longestUnreadable*step<=2*window*.2,`${PHASES[i]} copy stays readable for at least 80% of the camera transition`);
+ }
+});
+
+test('effective reading layers remain continuous when scrolling or seeking across a handoff',()=>{
+ const {storyTimeline,PHASES,TRANSITION_WINDOW:window}=timelineModule;
+ const step=2*window/4000;
+ for(let i=0;i<PHASES.length-1;i++){
+  const start=(i+.5)/7-window;
+  let previous;
+  for(let sample=0;sample<=4000;sample++){
+   const p=start+step*sample,forward=storyTimeline(p,'discover'),reverse=storyTimeline(p,'closing');
+   const layers=frame=>frame.opacities.flatMap((alpha,j)=>frame.entrances[PHASES[j]].map(entrance=>alpha*entrance));
+   const current=layers(forward);
+   assert.deepEqual(current,layers(reverse),'physical reading layers do not depend on scroll history');
+   assert.ok(current.every(alpha=>Number.isFinite(alpha)&&alpha>=0&&alpha<=1));
+   if(previous)assert.ok(current.every((alpha,j)=>Math.abs(alpha-previous[j])<.01),'no layer pops in or disappears at an edge');
+   previous=current;
+  }
+ }
+});
+
 
 test('typography and HUD enter in reading order, settle before each hold and seek identically',()=>{
  const {storyTimeline,PHASES,TRANSITION_WINDOW:window}=timelineModule;
  assert.deepEqual(storyTimeline(0).entrances.discover,[1,1,1]);
  for(let i=1;i<PHASES.length;i++){
-  const phase=PHASES[i],boundary=(i-.5)/7,start=boundary+.1*window,end=boundary+window;
+  const phase=PHASES[i],boundary=(i-.5)/7,start=boundary,end=boundary+window;
   assert.deepEqual(storyTimeline(start).entrances[phase],[0,0,0]);
   assert.deepEqual(storyTimeline(end+1e-12).entrances[phase],[1,1,1]);
   let previous=[0,0,0];
@@ -90,7 +128,10 @@ test('typography and HUD enter in reading order, settle before each hold and see
    previous=forward;
   }
   const half=storyTimeline((start+end)/2).entrances[phase];
-  assert.ok(half[0]>.9&&half[1]>.5&&half[2]>.2,'all three layers participate while the parent is fading in');
+  assert.ok(half[0]>.9&&half[1]>.5&&half[2]>.2,'all three layers are readable while the camera is still moving');
+  const moving=storyTimeline(boundary+window*.75);
+  assert.notEqual(moving.from,moving.to,'the camera still has room to finish its move');
+  assert.deepEqual(moving.entrances[phase],[1,1,1],'reading layers settle before the camera finishes');
  }
  for(const p of [0,.2,.5,1])assert.ok(Object.values(storyTimeline(p,undefined,{reduced:true}).entrances).every(values=>values.every(value=>value===1)));
 });

@@ -4,17 +4,17 @@ const clamp = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) 
 const mix = (a, b, t) => a + (b - a) * t;
 const SUBJECTS = {discover:['a'],price:['a'],conditions:['a'],criteria:['a'],comparison:['a','b','c'],value:['a','k','v'],evidence:['x'],closing:['a']};
 const CAMERA = [
-  [.66,.64,2.2,.65,.45,.72],
+  [.66,.78,.94,.66,.44,.45],
   [.48,.68,2.15,.30,.45,.72],
-  [.72,.72,1.3,.60,.26,.52],
+  [.72,.72,1.65,.63,.28,.58],
   [.94,.68,1.8,.32,.40,.52],
   [.12,.65,1.4,.588,.30,.56],
   [.2,.72,1.35,.32,.50,.40],
   [.58,.66,2.2,.63,.45,.72],
-  [.66,.64,2.2,.65,.45,.72],
+  [.66,.78,.94,.66,.44,.45],
 ];
-const MOBILE=[[.43,1.25],[.40,1.1],[.41,1.15],[.34,.95],[.31,1.1],[.31,1.25],[.32,.8],[.43,1.25]];
-const COMPACT=[[.405,1.05],[.38,.95],[.40,1.05],[.34,.78],[.31,1.0],[.285,1.05],[.30,.60],[.36,.85]];
+const MOBILE=[[.44,1.07],[.40,1.1],[.41,1.05],[.34,.95],[.31,.85,.60],[.31,1.25],[.32,.8],[.43,1.07]];
+const COMPACT=[[.42,.93],[.38,.95],[.40,.88],[.34,.78],[.31,.77,.60],[.285,1.05],[.30,.60],[.40,.93]];
 const TABLET=[null,[.24,.70],null,[.24,.68],null,[.25,.82],[.70,.80],null];
 
 export function clampFormation(value) {
@@ -38,12 +38,19 @@ function pose(id, phase) {
 
 export function formationPose(id, value) {
   const formation=clampFormation(value),a=pose(id,formation.from),b=pose(id,formation.to);
-  return Object.fromEntries(['x','y','z','scale'].map(key=>[key,mix(a[key],b[key],formation.mix)]));
+  const t=formation.mix,result=Object.fromEntries(['x','y','z','scale'].map(key=>[key,mix(a[key],b[key],t)]));
+  const ease=value=>{const u=clamp(value);return u*u*u*(u*(u*6-15)+10);};
+  // New subjects appear after the camera clears the outgoing reading area.
+  if(a.scale===0&&b.scale>0)result.scale=b.scale*ease((t-.4)/.6);
+  else if(b.scale===0&&a.scale>0)result.scale=a.scale*(1-ease(t/.6));
+  return result;
 }
 
-export function formationLayers(value) {
-  const formation=clampFormation(value),layer=phase=>phase==='conditions'||phase==='criteria'?1:0;
-  return mix(layer(formation.from),layer(formation.to),formation.mix);
+// The surrounding map belongs to the opening/closing, using the same camera clock.
+export function neighborhoodPresence(value) {
+  const {from,to,mix:t}=clampFormation(value);
+  const visible=phase=>phase==='discover'||phase==='closing'?1:0;
+  return mix(visible(from),visible(to),t);
 }
 
 export function atelierPresentation(progress,{reduced=false}={}) {
@@ -56,8 +63,8 @@ export function atelierPresentation(progress,{reduced=false}={}) {
   const compactFrom=COMPACT[PHASES.indexOf(timeline.from)],compactTo=COMPACT[PHASES.indexOf(timeline.to)];
   const tabletFrom=TABLET[PHASES.indexOf(timeline.from)]??[a[3],1],tabletTo=TABLET[PHASES.indexOf(timeline.to)]??[b[3],1];
   return {yaw,pitch,zoom,target:{x:0,y:targetY,z:0},
-    composition:{desktop:{x,y},mobile:{x:.5,y:mobileY},mobileScale,
+    composition:{desktop:{x,y},mobile:{x:mix(mobileFrom[2]??.5,mobileTo[2]??.5,timeline.blend),y:mobileY},mobileScale,
       compactDesktop:{x:mix(tabletFrom[0],tabletTo[0],timeline.blend),y,scale:mix(tabletFrom[1],tabletTo[1],timeline.blend)},
-      compactMobile:{x:.5,y:mix(compactFrom[0],compactTo[0],timeline.blend),scale:mix(compactFrom[1],compactTo[1],timeline.blend)}},
+      compactMobile:{x:mix(compactFrom[2]??.5,compactTo[2]??.5,timeline.blend),y:mix(compactFrom[0],compactTo[0],timeline.blend),scale:mix(compactFrom[1],compactTo[1],timeline.blend)}},
     formation:{from:timeline.from,to:timeline.to,mix:timeline.blend}};
 }

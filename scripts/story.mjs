@@ -1,10 +1,9 @@
 import { PALETTES, mixColor } from './city.mjs';
 import { PHASES, MODES, storyTimeline } from './story-timeline.mjs';
 import { filmSnapshot } from './film-model.mjs';
-import { mountStoryConnections } from './story-connections.mjs';
 
 const captions = {
-  discover:'직접 만든 24개 가상 장소입니다. 지금 연결된 실제 거래나 지역 자료가 아닙니다.',
+  discover:'설명용으로 설계한 가상 동네입니다. 지금 연결된 실제 거래나 지역 자료가 아닙니다.',
   price:'청록색이 진할수록 면적당 월 환산 가격이 높습니다. 가격만으로 장소의 조건은 설명되지 않습니다.',
   conditions:'모래색은 예시 경사입니다. A의 경사·고도·준공 연도를 함께 읽습니다.',
   criteria:'시연 중요도가 균등에서 경사 80%·고도 10%·연식 10%로 바뀝니다. 가격은 점수에서 제외합니다.',
@@ -61,7 +60,6 @@ export function mountStory({root,element,owner,onPhaseChange}) {
   const document=root?.ownerDocument;
   const canAnimate=typeof viewport?.requestAnimationFrame==='function'&&typeof viewport?.cancelAnimationFrame==='function';
   const setBeat=(panel,key,value)=>panel.style.setProperty?panel.style.setProperty(key,value):panel.style[key]=value;
-  const connections=mountStoryConnections({root,owner});
 
   function render() {
     if(destroyed)return;
@@ -100,6 +98,8 @@ export function mountStory({root,element,owner,onPhaseChange}) {
       const target=link.dataset.storyLink||link.getAttribute('href')?.replace('#story-','');
       if(target===phase)link.setAttribute('aria-current','step');else link.removeAttribute('aria-current');
     }
+    const visiblePhase=PHASES[timeline.opacities.findIndex(alpha=>alpha>0)];
+    if(legend?.style){legend.style.visibility=['criteria','comparison'].includes(visiblePhase)?'visible':'hidden';legend.style.opacity=String(Math.max(...timeline.opacities));}
     const {from,to,mix}=snapshot.frame.colorBlend;
     [...(legend?.querySelectorAll('i')??[])].forEach((swatch,i)=>{swatch.style.backgroundColor=mixColor(PALETTES[from][i],PALETTES[to][i],mix);});
     if(caption){
@@ -119,9 +119,7 @@ export function mountStory({root,element,owner,onPhaseChange}) {
     for(const bar of priceBars){const row=snapshot.priceBars.find(row=>row.id===bar.dataset.filmPriceBar);if(row)bar.style.setProperty('--price-ratio',String(row.ratio));}
     if(selection)selection.textContent=snapshot.selected==='x'?'장소 X · 조건과 내 기준 점수 자료 없음':`장소 A · 월세 35만 · 시연 내 기준 ${snapshot.fields['score-a']}점`;
     const key=JSON.stringify(snapshot.frame);
-    connections.setSnapshot(snapshot);
     if(key!==presentationKey){presentationKey=key;owner?.setPresentation(snapshot.frame);}
-    connections.update();
     if(phaseChanged)onPhaseChange?.(phase);
   }
   function cancelClock(){
@@ -166,7 +164,6 @@ export function mountStory({root,element,owner,onPhaseChange}) {
       destroyed=true;
       cancelClock();
       document?.removeEventListener?.('visibilitychange',visibilityChanged);
-      connections.destroy();
       if(originalFilmProgress)root?.style?.setProperty?.('--film-progress',originalFilmProgress);else root?.style?.removeProperty?.('--film-progress');
       if(root)for(const[key,value]of Object.entries(originalRoot)){if(value===undefined)delete root.dataset[key];else root.dataset[key]=value;}
       if(element){if(initialMode===undefined)delete element.dataset.storyMode;else element.dataset.storyMode=initialMode;}

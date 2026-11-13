@@ -64,7 +64,8 @@ test('atelier camera changes sides and stages a genuine triptych with smooth see
   assert.ok(frames[0].composition.desktop.x>.6);
   assert.ok(frames[1].composition.desktop.x<.4);
   assert.ok(frames[4].composition.desktop.x>.5&&frames[4].composition.desktop.x<.6);
-  assert.ok(frames[4].zoom<frames[0].zoom);
+  assert.ok(frames[0].zoom<frames[1].zoom,'approach the selected place from the wider neighborhood');
+  assert.ok(frames[4].zoom<frames[1].zoom,'three subjects fit a wider view than one');
   assert.equal(frames[6].formation.from,'evidence');
   for(let i=0;i<7;i++){
     const boundary=(i+.5)/7,before=model.presentationForProgress(boundary-1e-7),after=model.presentationForProgress(boundary+1e-7);
@@ -73,7 +74,7 @@ test('atelier camera changes sides and stages a genuine triptych with smooth see
   }
   for(const key of ['zoom','yaw','pitch','target'])assert.deepEqual(frames[7][key],frames[0][key]);
   assert.deepEqual(frames[7].composition.desktop,frames[0].composition.desktop);
-  assert.ok(frames[7].composition.compactMobile.scale<frames[0].composition.compactMobile.scale,'closing leaves room for its larger action block');
+  assert.ok(frames[7].composition.compactMobile.y<=frames[0].composition.compactMobile.y,'closing keeps the map above its action');
 });
 
 test('atelier rejects invalid progress and reduced motion uses complete phase poses', () => {

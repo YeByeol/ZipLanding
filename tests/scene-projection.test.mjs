@@ -5,7 +5,7 @@ import {mountScene3D} from '../scripts/scene3d.mjs';
 function fixture(){
  const saved=Object.fromEntries(['window','document','IntersectionObserver','ResizeObserver','getComputedStyle','requestAnimationFrame','cancelAnimationFrame'].map(k=>[k,globalThis[k]]));
  const frames=new Map();let id=1,resize;
- const element=()=>({dataset:{},style:{},append(){},remove(){},setAttribute(){},addEventListener(){},removeEventListener(){},querySelectorAll:()=>[]});
+ const element=()=>({dataset:{},style:{},append(){},remove(){},setAttribute(){},addEventListener(){},removeEventListener(){},querySelector:()=>null,querySelectorAll:()=>[]});
  globalThis.IntersectionObserver=class{observe(){}disconnect(){}};
  globalThis.ResizeObserver=class{constructor(fn){resize=fn;}observe(){}disconnect(){}};
  globalThis.window={IntersectionObserver:globalThis.IntersectionObserver,matchMedia:()=>({matches:false,addEventListener(){},removeEventListener(){}})};

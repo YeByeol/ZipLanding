@@ -47,7 +47,12 @@ test('film fields, bars and renderer share one snapshot while visitor data stays
 });
 test('eight panel fades and beats rewind exactly and metadata alone has hysteresis',()=>{
  const v=fixture(),boundary=2.5/7;
- v.seek(boundary-.0175);assert.ok(+v.panels[2].style.opacity>0&&+v.panels[2].style.opacity<1);assert.equal(v.panels[2].hidden,false);
+ const fades=[];
+ for(let offset=.03;offset>0;offset-=.002){
+  v.seek(boundary-offset);fades.push(+v.panels[2].style.opacity);
+  assert.equal(v.panels[2].hidden,false);assert.equal(v.panels[3].hidden,true,'incoming DOM panel waits until the outgoing copy is gone');
+ }
+ assert.ok(fades.some(alpha=>alpha>0&&alpha<1),'outgoing DOM panel fades before the handoff instead of popping off');
  v.seek(boundary);assert.ok(v.panels.every(p=>p.hidden));assert.equal(v.caption.style.opacity,'0');
  const phase=v.root.dataset.storyPhase;for(const p of [boundary+.001,boundary-.001,boundary+.002]){v.seek(p);assert.equal(v.root.dataset.storyPhase,phase);}
  const p=boundary+.035+.02;v.seek(p);const frame=v.frames.at(-1),beats=v.panels[3].style.getPropertyValue('--beat-2');v.seek(1);v.seek(p);

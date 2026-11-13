@@ -4,7 +4,7 @@ import { mountScene3D } from '../scripts/scene3d.mjs';
 
 // Keep the real owner and SVG builder; browser surfaces defer GPU initialization.
 function element() {
-  return { dataset: {}, style: {}, append() {}, remove() {}, setAttribute() {}, addEventListener() {}, removeEventListener() {}, querySelectorAll: () => [] };
+  return { dataset: {}, style: {}, append() {}, remove() {}, setAttribute() {}, addEventListener() {}, removeEventListener() {}, querySelector: () => null, querySelectorAll: () => [] };
 }
 
 test('presentation belongs only to the noninteractive owner and respects its manual view', () => {

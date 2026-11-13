@@ -11,6 +11,7 @@ test('atelier fallback keeps six stable subjects but exposes each chapter format
     assert.deepEqual(visible(svg), ids);
     assert.equal((svg.match(/data-building-id=/g) ?? []).length, 6);
     assert.equal((svg.match(/class="building-marker"/g) ?? []).length, 6);
+    assert.doesNotMatch(svg, /atelier-layer|data-layer=/, 'the fallback never reintroduces floating analysis plates');
     assert.doesNotMatch(svg, /NaN|Infinity|\sid=|url\(#|<(?:defs|pattern|clipPath)\b/);
   }
 });

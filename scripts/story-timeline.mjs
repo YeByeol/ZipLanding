@@ -3,6 +3,7 @@ export const MODES = Object.freeze({ discover:'price',price:'price',conditions:'
 const BOUNDARIES = Array.from({length:7},(_,i)=>(i+.5)/7);
 export const TRANSITION_WINDOW = .045;
 const WINDOW = TRANSITION_WINDOW;
+const COPY_WINDOW = WINDOW * .3;
 const DEADBAND = .006;
 const clamp = value => Math.max(0, Math.min(1, value));
 const smooth = value => { const t = clamp(value); return clamp(t * t * t * (t * (t * 6 - 15) + 10)); };
@@ -17,11 +18,11 @@ export function storyTimeline(progress, previousPhase, { reduced = false } = {})
   }
   const phase = PHASES[logical];
   const opacities = Array(PHASES.length).fill(0);
-  // Reading layers arrive during the camera handoff and settle before data begins.
+  // Reading layers settle early so the camera can finish without silencing the story.
   const entrances=Object.fromEntries(PHASES.map((name,i)=>{
     if(reduced||i===0)return[name,[1,1,1]];
-    const start=BOUNDARIES[i-1]+WINDOW*.1;
-    const local=clamp((p-start)/(WINDOW*.9));
+    const start=BOUNDARIES[i-1];
+    const local=clamp((p-start)/(WINDOW*.4));
     return[name,[smooth(local/.62),smooth((local-.08)/.72),smooth((local-.18)/.82)]];
   }));
   const beats = Object.fromEntries(PHASES.map((name,i)=>{
@@ -38,7 +39,8 @@ export function storyTimeline(progress, previousPhase, { reduced = false } = {})
     return { phase, from: PHASES[held], to: PHASES[held], blend: 0, opacities, beats, entrances };
   }
   const t = (p - (BOUNDARIES[index] - WINDOW)) / (2 * WINDOW);
-  opacities[index] = t < .45 ? 1 - smooth(t / .45) : 0;
-  opacities[index + 1] = t > .55 ? smooth((t - .55) / .45) : 0;
+  const handoff = p - BOUNDARIES[index];
+  opacities[index] = 1 - smooth((handoff + COPY_WINDOW) / COPY_WINDOW);
+  opacities[index + 1] = smooth(handoff / COPY_WINDOW);
   return { phase, from: PHASES[index], to: PHASES[index + 1], blend: smooth(t), opacities, beats, entrances };
 }

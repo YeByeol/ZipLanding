@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {atelierPresentation,clampFormation,formationPose,formationLayers} from '../scripts/scene-formation.mjs';
+import {atelierPresentation,clampFormation,formationPose,neighborhoodPresence} from '../scripts/scene-formation.mjs';
 import {PHASES,TRANSITION_WINDOW} from '../scripts/story-timeline.mjs';
 
 test('formations contain only the actual story subjects and never turn values into geometry',()=>{
@@ -10,7 +10,6 @@ test('formations contain only the actual story subjects and never turn values in
   assert.deepEqual(ids.filter(id=>formationPose(id,formation).scale>0),expected[i]);
   assert.equal(formationPose('unknown',formation).scale,0);
   for(const id of ids)assert.ok(Object.values(formationPose(id,formation)).every(Number.isFinite));
-  assert.equal(formationLayers(formation),['conditions','criteria'].includes(phase)?1:0);
  });
  const triptych=expected[4].map(id=>formationPose(id,{from:'comparison'}));
  assert.ok(triptych[0].x<triptych[1].x&&triptych[1].x<triptych[2].x);
@@ -41,4 +40,20 @@ test('incoming and outgoing maquette solids have separate paths through every ha
    assert.ok(separated,`${formation.from}→${formation.to} ${formation.mix}: ${a.id}/${b.id} solids overlap`);
   }
  }
+});
+
+test('the neighborhood returns with the same place and fades on the shared formation clock',()=>{
+ assert.equal(neighborhoodPresence({from:'discover'}),1);
+ assert.equal(neighborhoodPresence({from:'closing'}),1);
+ for(const from of ['price','conditions','criteria','comparison','value','evidence'])assert.equal(neighborhoodPresence({from}),0);
+ for(const t of [0,.1,.5,.9,1]){
+  assert.equal(neighborhoodPresence({from:'discover',to:'price',mix:t}),1-t);
+  assert.equal(neighborhoodPresence({from:'evidence',to:'closing',mix:t}),t);
+ }
+});
+
+test('incoming subjects wait for the reading handoff instead of surfacing behind outgoing proof',()=>{
+ for(const id of ['b','c'])assert.equal(formationPose(id,{from:'criteria',to:'comparison',mix:.4}).scale,0);
+ assert.ok(formationPose('b',{from:'criteria',to:'comparison',mix:.75}).scale>0);
+ assert.equal(formationPose('x',{from:'evidence',to:'closing',mix:.6}).scale,0);
 });

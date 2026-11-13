@@ -62,7 +62,7 @@ test('atelier film has different authored compositions and deterministic formati
  for(let i=0;i<=100;i++){
   const p=i/100,a=model.filmSnapshot(p,'discover').frame,b=model.filmSnapshot(p,'closing').frame;
   assert.deepEqual(a,b);assert.equal(a.fit,undefined);
-  assert.equal(a.composition.mobile.x,.5);assert.ok(a.composition.mobile.y>=.3&&a.composition.mobile.y<=.44);
+  assert.ok(a.composition.mobile.x>=.5&&a.composition.mobile.x<=.6,'comparison moves into the table column band');assert.ok(a.composition.mobile.y>=.3&&a.composition.mobile.y<=.44);
   const reduced=model.filmSnapshot(p,undefined,{reduced:true}).frame;
   assert.equal(reduced.formation.from,reduced.formation.to);assert.equal(reduced.formation.mix,0);
   const complete=model.filmSnapshot(p,undefined,{complete:true}).frame;
