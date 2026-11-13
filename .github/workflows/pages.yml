@@ -23,8 +23,9 @@ jobs:
           npm test
           npm run check
           node scripts/export-city.mjs
-      - name: Prepare static site
+      - name: Prepare site with immutable runtime and versioned assets
         run: |
+          rm -rf dist
           mkdir -p dist
           cp index.html styles.css dist/
           cp -R assets scripts styles vendor dist/

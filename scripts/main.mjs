@@ -2,6 +2,7 @@ import { BUILDINGS, normalizedWeights, scoreBuilding, monthlyUnit, comparisonFor
 import { PALETTES } from './city.mjs';
 import { mountScene3D } from './scene3d.mjs';
 import { mountMotion } from './motion.mjs';
+import { mountProductTour } from './product-tour.mjs';
 import { mountStory } from './story.mjs';
 import { PHASES } from './story-timeline.mjs';
 
@@ -127,7 +128,8 @@ for (const group of document.querySelectorAll('[data-scene]')) group.addEventLis
   else if (button.dataset.sceneAction === 'zoom-out') owner?.zoom(-.15);
   else owner?.rotate(button.dataset.sceneAction === 'left' ? -.3 : .3);
 });
-motion = mountMotion({ header:$('.site-header'), progress:$('#reading-progress'), onUpdate: value => story.updateScroll(value) });
+const productTour = mountProductTour($('#product-tour'), [...document.querySelectorAll('[data-reveal]')]);
+motion = mountMotion({ header:$('.site-header'), progress:$('#reading-progress'), onUpdate: value => { story.updateScroll(value); productTour.update(value); } });
 
 // Native buttons mirror every painted building, including the missing-data example.
 for (const building of BUILDINGS) {
@@ -315,7 +317,7 @@ $('#share-state').addEventListener('click', async () => {
   }
 });
 $('#close-share').addEventListener('click', () => { $('#share-fallback').hidden = true; $('#share-state').focus(); });
-window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); story.destroy(); storyOwner.destroy(); cities.forEach(city => city.owner.destroy()); } });
+window.addEventListener('pagehide', event => { clearTimeout(toastTimer); clearTimeout(announceTimer); if (!event.persisted) { motion.destroy(); productTour.destroy(); story.destroy(); storyOwner.destroy(); cities.forEach(city => city.owner.destroy()); } });
 document.querySelectorAll('[data-needs-js]:not([data-story-prev]):not([data-story-next])').forEach(control => { control.disabled = false; });
 render({syncInputs:true});
 document.body.classList.add('has-demo');

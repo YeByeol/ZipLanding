@@ -25,7 +25,7 @@ test('neighborhood fits its map tile and preserves the central residence lot', (
       instances++;
     }
   });
-  assert.ok(calls <= 45);
+  assert.ok(calls <= 16, 'context detail stays batched into a small material palette');
   assert.equal(context.stats.drawCalls, calls);
   assert.equal(context.stats.instances, instances);
   assert.equal(context.stats.buildings, 6);
@@ -41,6 +41,7 @@ test('global context fade is reversible and releases depth writing during blendi
       assert.equal(mesh.material.opacity, amount);
       assert.equal(mesh.material.depthWrite, amount === 1);
       assert.equal(mesh.material.transparent, amount !== 1);
+      assert.equal(mesh.castShadow, amount === 1 && mesh.userData.contextShadow, 'dissolving context cannot leave solid ghost shadows');
     });
   }
   context.setVisibility(NaN);
@@ -48,6 +49,22 @@ test('global context fade is reversible and releases depth writing during blendi
   context.setVisibility(3);
   assert.equal(context.group.visible, true);
   assert.equal(context.group.children[0].material.opacity, 1);
+});
+
+test('all context geometry, materials and instance buffers have explicit disposal ownership', () => {
+  const resources = new Set();
+  const context = buildNeighborhood({THREE, remember: value => resources.add(value)});
+  let disposed = 0;
+  for (const mesh of context.group.children) {
+    assert.ok(resources.has(mesh), 'the instanced buffers are registered with the scene owner');
+    assert.ok(resources.has(mesh.geometry));
+    assert.ok(resources.has(mesh.material));
+  }
+  for (const resource of resources) {
+    resource.addEventListener('dispose', () => disposed++);
+    resource.dispose();
+  }
+  assert.equal(disposed, resources.size);
 });
 
 test('SVG context uses the same six lots without WebGL or remote assets', () => {

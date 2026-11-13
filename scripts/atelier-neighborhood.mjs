@@ -1,72 +1,128 @@
 // A fictional neighborhood context. Positions express relationships, not measured property data.
 const COLORS = {
-  ground: '#e6e9df', road: '#ced6cf', paving: '#f1f1e8',
-  wall: '#d5ded2', roof: '#e9ede3', glass: '#91a69a',
-  frame: '#b1c0b2', wood: '#a59c82', grass: '#c1d0b2', leaf: '#829a76',
+  ground: '#e6e9df', road: '#c8d1c8', paving: '#f2f1e8',
+  wall: '#d5ded2', stone: '#c5cdbd', warm: '#dfdfce', roof: '#edefe5',
+  glass: '#719083', frame: '#a0ad99', wood: '#a59a7d',
+  grass: '#bdcdae', leaf: '#78916a', leafLight: '#98ac81',
 };
 const LOTS = [
-  {id:'west-court',x:-1.88,z:-.88,w:.68,d:.72,h:.69},
-  {id:'west-studio',x:-1.90,z:.28,w:.64,d:.62,h:.46},
-  {id:'north-terrace',x:-.20,z:-1.37,w:.92,d:.45,h:.60},
-  {id:'north-house',x:1.44,z:-1.29,w:.80,d:.67,h:.75},
-  {id:'south-studio',x:-.22,z:1.52,w:.85,d:.45,h:.49},
-  {id:'south-court',x:1.72,z:1.51,w:.77,d:.44,h:.41},
+  {id:'west-court',x:-1.90,z:-.97},
+  {id:'west-studio',x:-1.93,z:.25},
+  {id:'north-terrace',x:-.20,z:-1.45},
+  {id:'north-house',x:1.50,z:-1.47},
+  {id:'south-studio',x:-.24,z:1.52},
+  {id:'south-court',x:1.72,z:1.51},
 ];
 
 function describeNeighborhood() {
   const parts = [];
   const box = (x,y,z,w,h,d,role,lot='ground') => parts.push({kind:'box',x,y,z,w,h,d,role,lot});
-  const tree = (x,z,size=.16) => {
-    box(x,.13,z,.027,.28,.027,'wood','park');
-    parts.push({kind:'tree',x,y:.37,z,w:size,h:size*1.32,d:size,role:'leaf',lot:'park'});
+  const tree = (x,z,size=.13,lot='park') => {
+    box(x,.13,z,.022,.28,.022,'wood',lot);
+    for (const [dx,dy,dz,s,role] of [[0,0,0,1,'leaf'],[-.45,.27,.20,.72,'leafLight'],[.38,.20,-.22,.66,'leaf']]) {
+      parts.push({kind:'tree',x:x+dx*size,y:.35+dy*size,z:z+dz*size,w:size*s,h:size*s*1.24,d:size*s,role,lot});
+    }
+  };
+  const planter = (x,y,z,w,d,lot) => {
+    box(x,y,z,w,.045,d,'stone',lot);
+    box(x,y+.026,z,w-.024,.012,d-.024,'grass',lot);
+  };
+  // Small bays and projecting jambs produce depth without turning a whole wall into glass.
+  const volume = (x,z,w,d,h,base,floors,bays,role,lot) => {
+    box(x,base+h/2,z,w,h,d,role,lot);
+    box(x,base+.012,z,w+.035,.025,d+.035,'paving',lot);
+    const floorH=h/floors,front=z+d/2,side=x+w/2;
+    for (let f=0; f<floors; f++) {
+      const y=base+floorH*(f+.51),windowH=floorH*.62;
+      for (let i=0; i<bays; i++) {
+        const cx=x+w*((i+.5)/bays-.5),windowW=w*.67/bays;
+        box(cx,y,front+.006,windowW,windowH,.012,'glass',lot);
+        for (const dx of [-1,1]) box(cx+dx*(windowW/2+.008),y,front+.017,.014,windowH+.025,.035,'frame',lot);
+        box(cx,y-windowH/2-.010,front+.027,windowW+.038,.018,.06,'roof',lot);
+      }
+      for (let i=0; i<2; i++) {
+        const cz=z+d*((i+.5)/2-.5);
+        box(side+.006,y,cz,.012,windowH,d*.29,'glass',lot);
+        for (const dz of [-1,1]) box(side+.017,y,cz+dz*d*.158,.035,windowH+.025,.014,'frame',lot);
+      }
+      if (f>0) box(x,base+floorH*f,z,w+.045,.023,d+.045,'roof',lot);
+    }
+    box(x,base+h+.014,z,w+.055,.028,d+.055,'roof',lot);
+    box(x,base+h+.032,z,w-.06,.010,d-.06,'ground',lot);
+    // A fine parapet keeps the roof an inhabited surface, not a thick lid.
+    for (const side of [-1,1]) {
+      box(x+side*(w/2-.008),base+h+.047,z,.020,.038,d,'wall',lot);
+      box(x,base+h+.047,z+side*(d/2-.008),w,.038,.020,'wall',lot);
+    }
   };
 
-  // Flush street surfaces keep this a place, rather than another display pedestal.
+  // All roads and pavements are flush with the ground; there is no display pedestal.
   box(0,-.043,0,5.20,.025,3.80,'ground');
   box(0,-.024,.98,5.20,.012,.32,'road');
   box(-1.13,-.023,0,.30,.014,3.80,'road');
+  box(.735,-.024,-.98,3.73,.012,.20,'road');
   for (const z of [.755,1.205]) box(0,-.010,z,5.20,.018,.13,'paving');
   for (const x of [-1.355,-.905]) box(x,-.009,-.12,.13,.020,3.56,'paving');
-  // The intersection is paved as a continuous street, not a grid overlay.
+  for (const z of [-1.125,-.835]) box(.735,-.010,z,3.73,.018,.09,'paving');
+  // Clear road intersections and short crossings locate the central residence in a block.
   box(-1.13,.002,.98,.30,.009,.32,'road');
+  box(-1.13,.002,-.98,.30,.009,.20,'road');
   for (const x of [-.34,-.23,-.12,-.01,.10]) box(x,-.010,.98,.055,.008,.22,'paving');
-  for (const z of [-.28,-.17,-.06,.05]) box(-1.13,-.006,z,.22,.008,.05,'paving');
+  for (const z of [.68,.59,.50,.41]) box(-1.13,-.006,z,.22,.008,.045,'paving');
+  for (const x of [.37,.45,.53,.61]) box(x,-.010,-.98,.042,.008,.15,'paving');
   box(-.12,.002,.735,.35,.012,.12,'paving');
 
-  // A small public garden is visible from the main residence's eastern side.
+  // A pocket garden meets the east footway and the south street, rather than floating alone.
   box(1.70,-.012,.10,1.03,.020,1.10,'grass','park');
   box(1.44,.003,.11,.13,.016,1.10,'paving','park');
   box(1.80,.003,.35,.70,.016,.13,'paving','park');
-  for (const [x,z,s] of [[1.80,-.23,.17],[2.10,.15,.15],[1.73,.60,.16]]) tree(x,z,s);
+  box(1.44,.003,.66,.13,.016,.23,'paving','park');
+  for (const [x,z,s] of [[1.80,-.23,.14],[2.10,.15,.13],[1.83,.58,.12]]) tree(x,z,s);
   box(1.87,.09,-.02,.29,.026,.075,'wood','park');
   for (const x of [1.76,1.98]) box(x,.043,-.02,.025,.075,.055,'frame','park');
 
-  for (const lot of LOTS) {
-    const {x,z,w,d,h,id} = lot;
-    const floors = h > .55 ? 2 : 1;
-    const front = z+d/2, side = x+w/2;
-    // Deep dark bays sit behind a restrained rhythm of narrow pale frames.
-    box(x,h/2,z,w,h,d,'wall',id);
-    box(x,.025,z,w+.045,.033,d+.045,'paving',id);
-    box(x,h+.018,z,w+.070,.036,d+.070,'roof',id);
-    box(x,h+.039,z,w-.09,.012,d-.09,'ground',id);
-    for (let f=0; f<floors; f++) {
-      const windowH = h/floors*.62, y = h/floors*(f+.51);
-      box(x,y,front+.006,w*.79,windowH,.012,'glass',id);
-      box(side+.006,y,z,.012,windowH,d*.73,'glass',id);
-      for (const ratio of [-.39,-.13,.13,.39]) {
-        box(x+w*ratio,y,front+.024,.017,windowH+.035,.045,'frame',id);
-      }
-      for (const ratio of [-.35,0,.35]) {
-        box(side+.023,y,z+d*ratio,.045,windowH+.035,.017,'frame',id);
-      }
-      box(x,y+windowH/2+.025,front+.035,w+.035,.030,.10,'roof',id);
-      box(x,y-windowH/2-.012,front+.031,w*.84,.023,.08,'roof',id);
+  // Six distinct silhouettes share a restrained material kit; none encodes a property value.
+  for (const {id,x,z} of LOTS) {
+    if (id==='west-court') {
+      volume(x,z,.68,.75,.49,0,2,3,'stone',id);
+      volume(x-.07,z-.12,.45,.46,.28,.52,1,2,'wall',id);
+      planter(x+.22,.56,z+.20,.16,.27,id);
+      box(x,.10,z+.435,.42,.035,.10,'paving',id);
+    } else if (id==='west-studio') {
+      volume(x,z,.68,.60,.34,0,1,2,'warm',id);
+      box(x,.394,z-.10,.26,.055,.34,'wall',id);
+      for (const dx of [-.105,-.035,.035,.105]) box(x+dx,.429,z-.10,.016,.017,.36,'wood',id);
+      box(x,.278,z+.345,.71,.026,.16,'roof',id);
+      for (const dx of [-.30,.30]) box(x+dx,.13,z+.392,.022,.26,.025,'frame',id);
+    } else if (id==='north-terrace') {
+      volume(x,z,.98,.44,.32,0,1,4,'wall',id);
+      volume(x-.29,z-.015,.34,.39,.31,.35,1,2,'warm',id);
+      volume(x+.13,z-.015,.43,.39,.19,.35,1,2,'stone',id);
+      planter(x+.35,.395,z+.10,.17,.15,id);
+    } else if (id==='north-house') {
+      volume(x,z,.62,.54,.80,0,3,2,'warm',id);
+      box(x+.34,.43,z-.11,.16,.86,.32,'stone',id);
+      box(x+.34,.874,z-.11,.19,.028,.35,'roof',id);
+      for (const y of [.16,.42,.68]) box(x+.34,y,z+.057,.06,.12,.013,'glass',id);
+      planter(x-.10,.864,z-.04,.25,.29,id);
+    } else if (id==='south-studio') {
+      volume(x,z,.96,.40,.31,0,1,4,'stone',id);
+      box(x,.332,z+.25,1.03,.028,.16,'roof',id);
+      for (const dx of [-.44,0,.44]) box(x+dx,.16,z+.30,.018,.32,.018,'frame',id);
+      planter(x+.26,.374,z-.045,.30,.18,id);
+      box(x-.28,.377,z-.035,.23,.055,.19,'warm',id);
+    } else {
+      volume(x-.23,z-.015,.34,.47,.58,0,2,2,'wall',id);
+      volume(x+.155,z+.045,.43,.35,.40,0,1,2,'warm',id);
+      planter(x+.17,.463,z+.02,.27,.22,id);
+      box(x-.025,.35,z+.285,.35,.028,.15,'roof',id);
+      for (const dx of [-.17,.14]) box(x+dx,.17,z+.34,.018,.34,.018,'frame',id);
     }
-    if (floors === 2) box(x,h/2,z,w+.055,.024,d+.055,'roof',id);
-    box(x-w*.23,h+.085,z-d*.19,w*.30,.09,d*.31,'wall',id);
-    box(x-w*.23,h+.134,z-d*.19,w*.35,.014,d*.36,'roof',id);
-    box(x+w*.22,h+.065,z-d*.12,w*.22,.05,d*.44,'grass',id);
+  }
+  // Repeated street trees establish a walkable edge; crowns stay clear of the crossing.
+  for (const [x,z,lot] of [[-1.46,-1.59,'west-court'],[-1.46,-.43,'west-court'],[-1.46,.61,'west-studio'],[-1.46,1.59,'west-studio'],[.69,1.245,'south-studio']]) {
+    box(x,.002,z,.17,.012,.17,'grass',lot);
+    tree(x,z,.09,lot);
   }
   return parts;
 }
@@ -91,7 +147,7 @@ export function buildNeighborhood({THREE,remember}) {
   for (const [key,parts] of batches) {
     const {kind,role} = parts[0];
     if (!materials.has(role)) materials.set(role, own(new THREE.MeshStandardMaterial({
-      color:COLORS[role], roughness:role==='glass'?.36:.88, metalness:0,
+      color:COLORS[role], roughness:role==='glass'?.25:role==='frame'?.52:.88, metalness:role==='frame'?.12:0,
     })));
     const mesh = own(new THREE.InstancedMesh(kind==='tree'?canopy:cube,materials.get(role),parts.length));
     mesh.name = `neighborhood-${key}`;
