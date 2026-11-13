@@ -95,7 +95,7 @@ export function mountScene3D(container, { buildings = BUILDINGS, onSelect, inter
         const fit = fitOrthographicBounds(sceneBounds, camera.matrixWorldInverse.elements, { width, height, ...storyFit });
         if (fit) { projection = fit; zoom = fit.zoom; }
       } else if (storyOwned() && storyComposition) {
-        const composed = compositionProjection({width,height,zoom,composition:storyComposition});
+        const composed = compositionProjection({width,height,zoom,composition:storyComposition,maxMobileWidth:420});
         if (composed) { projection = composed; zoom = composed.zoom; }
       }
       if (Object.entries(projection).some(([key, value]) => camera[key] !== value)) {

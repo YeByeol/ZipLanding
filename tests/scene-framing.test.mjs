@@ -107,3 +107,21 @@ test('tablet study cameras reserve left-column space without changing phone and 
   }
  }
 });
+
+test('wide mobile WebGL framing caps pixel growth while preserving phones, desktop and SVG fit',()=>{
+ for(const phase of phases){
+  const frame=filmSnapshot(phases.indexOf(phase)/7).frame;
+  const projection=width=>module.compositionProjection({width,height:736,zoom:frame.zoom,composition:frame.composition,maxMobileWidth:420});
+  const baseline=projection(420);
+  for(const width of [421,500,600,760])assert.ok(projection(width).zoom*width<=baseline.zoom*420+1e-10,`${phase} cannot grow beyond the 420px model size`);
+  for(const width of [600,760]){
+   const view=projection(width),camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,60);Object.assign(camera,view);camera.updateProjectionMatrix();
+   const target=new THREE.Vector3(0,0,-14).project(camera);
+   assert.ok(Math.abs((1-target.y)/2-frame.composition.compactMobile.y)<1e-12,'wide stacked views retain room for the compact proof band');
+   assert.ok(Math.abs(view.zoom*width-frame.zoom*frame.composition.compactMobile.scale*420)<1e-10);
+  }
+  for(const width of [320,390,420,761,1000,1440])assert.deepEqual(projection(width),module.compositionProjection({width,height:736,zoom:frame.zoom,composition:frame.composition}),`${phase}/${width} keeps its existing framing`);
+  const svg=module.compositionProjection({width:760,height:736,zoom:frame.zoom,composition:frame.composition});
+  assert.ok(svg.zoom>projection(760).zoom,'SVG retains its own height-based fitting');
+ }
+});

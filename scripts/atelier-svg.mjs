@@ -54,10 +54,16 @@ function layout(formation,width,height,frame={}) {
   const projection=compositionProjection({width,height,zoom:1,composition:frame.composition});
   const halfWidth=(projection.right-projection.left)/2,halfHeight=(projection.top-projection.bottom)/2;
   const x=.5-(projection.left+projection.right)/2*projection.zoom/(2*halfWidth);
-  const y=.5+(projection.top+projection.bottom)/2*projection.zoom/(2*halfHeight);
+  const wideMobile=Math.max(0,Math.min(1,(width-420)/180));
+  const offsetFor=phase=>phase==='criteria'?.009:0;
+  const mobileOffset=blend?0:(offsetFor(formation.from)+(offsetFor(formation.to)-offsetFor(formation.from))*formation.mix)*wideMobile;
+  const y=.5+(projection.top+projection.bottom)/2*projection.zoom/(2*halfHeight)+mobileOffset;
   const unitFor=phase=>{
     const triple=phase==='comparison'||phase==='value',scale=triple?(phase==='value'?.66:.78):1.35;
-    const mobile=Math.min(width*(triple?.23:.68),height*(triple?.26:.40));
+    // Fit the complete roof, plinth and analysis plates between the mobile
+    // copy and proof bands; their heights differ from the WebGL projection.
+    const mobileHeight={discover:.32,price:.33,conditions:.32,criteria:.28,comparison:.23,value:.105,evidence:.22,closing:.25}[phase]??.32;
+    const mobile=Math.min(width*(triple?.23:.68),height*mobileHeight);
     const desktop=Math.min(width*(triple?.20:.47),height*(triple?.47:.79));
     const targetW=mobile+(desktop-mobile)*blend;
     return targetW/(254*scale)*(phase==='conditions'?.7:phase==='criteria'?.85:1);

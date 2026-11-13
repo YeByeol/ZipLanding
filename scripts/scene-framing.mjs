@@ -24,7 +24,7 @@ export function fitOrthographicBounds(bounds, view, { width, height, padding = 2
 }
 
 
-export function compositionProjection({ width, height, zoom, composition } = {}) {
+export function compositionProjection({ width, height, zoom, composition, maxMobileWidth } = {}) {
   if (![width, height, zoom].every(Number.isFinite) || width <= 0 || height <= 0 || zoom <= 0) return null;
   const clamp = value => Math.max(0, Math.min(1, value));
   // Match the layout breakpoint: a blended camera can place models behind
@@ -36,7 +36,11 @@ export function compositionProjection({ width, height, zoom, composition } = {})
   const desktop=tablet?{x:number(tablet.x,number(fullDesktop.x,.5))+(number(fullDesktop.x,.5)-number(tablet.x,number(fullDesktop.x,.5)))*desktopBlend,y:number(tablet.y,number(fullDesktop.y,.5))+(number(fullDesktop.y,.5)-number(tablet.y,number(fullDesktop.y,.5)))*desktopBlend}:fullDesktop;
   const tabletScale=Number.isFinite(tablet?.scale)?Math.max(.5,Math.min(1,tablet.scale)):1;
   const desktopScale=tabletScale+(1-tabletScale)*desktopBlend;
-  const heightT=clamp((height-660)/120),heightBlend=heightT*heightT*(3-2*heightT);
+  const heightT=clamp((height-660)/120);
+  const wideT=Number.isFinite(maxMobileWidth)&&maxMobileWidth>0?clamp((width-maxMobileWidth)/180):0;
+  // Wide stacked pages still reserve the compact proof band; extra width is
+  // breathing room, not permission for the model to grow through that band.
+  const heightBlend=heightT*heightT*(3-2*heightT)*(1-wideT*wideT*(3-2*wideT));
   const compact=composition?.compactMobile;
   const mobile=compact?{x:number(compact.x,.5)+(number(fullMobile.x,.5)-number(compact.x,.5))*heightBlend,y:number(compact.y,.5)+(number(fullMobile.y,.5)-number(compact.y,.5))*heightBlend}:fullMobile;
   const x = number(mobile.x, .5) + (number(desktop.x, .5) - number(mobile.x, .5)) * blend;
@@ -44,7 +48,10 @@ export function compositionProjection({ width, height, zoom, composition } = {})
   const fullScale = Number.isFinite(composition?.mobileScale) ? Math.max(.5, Math.min(1.5, composition.mobileScale)) : 1;
   const compactScale=Number.isFinite(compact?.scale)?Math.max(.5,Math.min(1.5,compact.scale)):fullScale;
   const mobileScale=compactScale+(fullScale-compactScale)*heightBlend;
-  const actualZoom = zoom * (mobileScale + (desktopScale - mobileScale) * blend);
+  // Three's orthographic pixel scale follows width. Stacked layouts keep the
+  // same vertical study space on wider phones; SVG has its own height fit.
+  const widthScale = !blend && Number.isFinite(maxMobileWidth) && maxMobileWidth > 0 ? Math.min(1,maxMobileWidth/width) : 1;
+  const actualZoom = zoom * (mobileScale + (desktopScale - mobileScale) * blend) * widthScale;
   const aspect = width / height, halfWidth = Math.max(5.6, 3.65 * aspect), halfHeight = halfWidth / aspect;
   const centerX = (.5 - x) * 2 * halfWidth / actualZoom, centerY = (y - .5) * 2 * halfHeight / actualZoom;
   return {left:centerX-halfWidth,right:centerX+halfWidth,top:centerY+halfHeight,bottom:centerY-halfHeight,zoom:actualZoom};
