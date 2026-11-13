@@ -1,5 +1,5 @@
 import { BUILDINGS } from './demo.mjs';
-import { PHASES, storyTimeline } from './story-timeline.mjs';
+import { atelierPresentation } from './scene-formation.mjs';
 export const DEFAULT_VIEW = Object.freeze({ yaw: .72, pitch: .68 });
 export const clampProgress = value => Number.isFinite(value) ? Math.max(0, Math.min(1, value)) : 0;
 export const clampZoom = value => Number.isFinite(value) ? Math.max(.75, Math.min(1.6, value)) : 1;
@@ -48,32 +48,7 @@ export function clampPresentation(frame = {}) {
 }
 
 export function presentationForProgress(progress, building = BUILDINGS[0], { reduced = false } = {}) {
-  const center = { x: 0, y: .28, z: 0 };
-  const valid = building && [building.x, building.y, building.height].every(Number.isFinite) && building.height >= 0;
-  const selected = valid ? { ...buildingPosition(building), y: building.height / 78 + .14 } : center;
-  const evidence = BUILDINGS.find(item=>item.id==='x');
-  const unknown = {...buildingPosition(evidence),y:evidence.height/78+.14};
-  const comparison = BUILDINGS.slice(0,3).reduce((point,item)=>{
-    const position=buildingPosition(item);
-    return {x:point.x+position.x/3,y:point.y+(item.height/78+.14)/3,z:point.z+position.z/3};
-  },{x:0,y:0,z:0});
-  const frames = [
-    {yaw:.72,pitch:.68,zoom:1.22,target:center},
-    {yaw:.64,pitch:.72,zoom:1.85,target:selected},
-    {yaw:.52,pitch:.76,zoom:3.4,target:selected},
-    {yaw:.92,pitch:.72,zoom:1.55,target:center},
-    {yaw:.58,pitch:.84,zoom:1.65,target:comparison},
-    {yaw:.42,pitch:1,zoom:1.5,target:center},
-    {yaw:.85,pitch:.76,zoom:3,target:unknown},
-    {yaw:.72,pitch:.68,zoom:1.22,target:center},
-  ];
-  const timeline = storyTimeline(reduced ? 0 : progress);
-  const from = frames[PHASES.indexOf(timeline.from)], to = frames[PHASES.indexOf(timeline.to)];
-  const mix = (a, b) => a + (b - a) * timeline.blend;
-  return clampPresentation({
-    yaw: mix(from.yaw, to.yaw), pitch: mix(from.pitch, to.pitch), zoom: mix(from.zoom, to.zoom),
-    target: Object.fromEntries(['x', 'y', 'z'].map(key => [key, mix(from.target[key], to.target[key])])),
-  });
+  return atelierPresentation(clampProgress(progress), {reduced});
 }
 
 export const isClick = (dx, dy) => Math.hypot(dx, dy) < 6;

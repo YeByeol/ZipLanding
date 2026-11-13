@@ -27,13 +27,24 @@ export function fitOrthographicBounds(bounds, view, { width, height, padding = 2
 export function compositionProjection({ width, height, zoom, composition } = {}) {
   if (![width, height, zoom].every(Number.isFinite) || width <= 0 || height <= 0 || zoom <= 0) return null;
   const clamp = value => Math.max(0, Math.min(1, value));
-  const t = clamp((width - 760) / 240), blend = t * t * t * (t * (t * 6 - 15) + 10);
-  const desktop = composition?.desktop ?? { x: .5, y: .5 }, mobile = composition?.mobile ?? desktop;
+  // Match the layout breakpoint: a blended camera can place models behind
+  // the proof panel while the DOM is already using its other composition.
+  const blend = width > 760 ? 1 : 0;
+  const fullDesktop = composition?.desktop ?? { x: .5, y: .5 }, fullMobile = composition?.mobile ?? fullDesktop;
   const number = (value, fallback) => Number.isFinite(value) ? clamp(value) : fallback;
+  const tablet=composition?.compactDesktop,desktopT=clamp((width-1100)/340),desktopBlend=desktopT*desktopT*(3-2*desktopT);
+  const desktop=tablet?{x:number(tablet.x,number(fullDesktop.x,.5))+(number(fullDesktop.x,.5)-number(tablet.x,number(fullDesktop.x,.5)))*desktopBlend,y:number(tablet.y,number(fullDesktop.y,.5))+(number(fullDesktop.y,.5)-number(tablet.y,number(fullDesktop.y,.5)))*desktopBlend}:fullDesktop;
+  const tabletScale=Number.isFinite(tablet?.scale)?Math.max(.5,Math.min(1,tablet.scale)):1;
+  const desktopScale=tabletScale+(1-tabletScale)*desktopBlend;
+  const heightT=clamp((height-660)/120),heightBlend=heightT*heightT*(3-2*heightT);
+  const compact=composition?.compactMobile;
+  const mobile=compact?{x:number(compact.x,.5)+(number(fullMobile.x,.5)-number(compact.x,.5))*heightBlend,y:number(compact.y,.5)+(number(fullMobile.y,.5)-number(compact.y,.5))*heightBlend}:fullMobile;
   const x = number(mobile.x, .5) + (number(desktop.x, .5) - number(mobile.x, .5)) * blend;
   const y = number(mobile.y, .5) + (number(desktop.y, .5) - number(mobile.y, .5)) * blend;
-  const mobileScale = Number.isFinite(composition?.mobileScale) ? Math.max(.75, Math.min(1.5, composition.mobileScale)) : 1;
-  const actualZoom = zoom * (mobileScale + (1 - mobileScale) * blend);
+  const fullScale = Number.isFinite(composition?.mobileScale) ? Math.max(.5, Math.min(1.5, composition.mobileScale)) : 1;
+  const compactScale=Number.isFinite(compact?.scale)?Math.max(.5,Math.min(1.5,compact.scale)):fullScale;
+  const mobileScale=compactScale+(fullScale-compactScale)*heightBlend;
+  const actualZoom = zoom * (mobileScale + (desktopScale - mobileScale) * blend);
   const aspect = width / height, halfWidth = Math.max(5.6, 3.65 * aspect), halfHeight = halfWidth / aspect;
   const centerX = (.5 - x) * 2 * halfWidth / actualZoom, centerY = (y - .5) * 2 * halfHeight / actualZoom;
   return {left:centerX-halfWidth,right:centerX+halfWidth,top:centerY+halfHeight,bottom:centerY-halfHeight,zoom:actualZoom};

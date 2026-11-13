@@ -59,30 +59,33 @@ test('named views fit the city or focus the requested building without mutating 
 });
 
 
-test('eight film camera poses hold and transition smoothly with separate A and X targets', () => {
-  const poses=[[1.22,.72,.68],[1.85,.64,.72],[3.4,.52,.76],[1.55,.92,.72],[1.65,.58,.84],[1.5,.42,1],[3,.85,.76],[1.22,.72,.68]];
-  const frames=poses.map((_,i)=>model.presentationForProgress(i/7));
-  poses.forEach(([zoom,yaw,pitch],i)=>{assert.equal(frames[i].zoom,zoom);assert.equal(frames[i].yaw,yaw);assert.equal(frames[i].pitch,pitch);});
-  assert.ok(Math.abs(frames[2].target.x+2.975)<1e-12);assert.ok(Math.abs(frames[6].target.x-2.975)<1e-12);
-  assert.notDeepEqual(frames[2].target,frames[6].target,'A and X each retain their own camera target');
+test('atelier camera changes sides and stages a genuine triptych with smooth seeks', () => {
+  const frames=Array.from({length:8},(_,i)=>model.presentationForProgress(i/7));
+  assert.ok(frames[0].composition.desktop.x>.6);
+  assert.ok(frames[1].composition.desktop.x<.4);
+  assert.ok(frames[4].composition.desktop.x>.5&&frames[4].composition.desktop.x<.6);
+  assert.ok(frames[4].zoom<frames[0].zoom);
+  assert.equal(frames[6].formation.from,'evidence');
   for(let i=0;i<7;i++){
-    const boundary=(i+.5)/7, before=model.presentationForProgress(boundary-1e-7),after=model.presentationForProgress(boundary+1e-7);
+    const boundary=(i+.5)/7,before=model.presentationForProgress(boundary-1e-7),after=model.presentationForProgress(boundary+1e-7);
     assert.ok(Math.abs(before.zoom-after.zoom)<.0001);
-    const held=model.presentationForProgress(i/7+.005);assert.deepEqual(held,frames[i]);
+    assert.deepEqual(model.presentationForProgress(i/7+.005),frames[i]);
   }
-  assert.deepEqual(model.presentationForProgress(1),frames[0]);
+  for(const key of ['zoom','yaw','pitch','target'])assert.deepEqual(frames[7][key],frames[0][key]);
+  assert.deepEqual(frames[7].composition.desktop,frames[0].composition.desktop);
+  assert.ok(frames[7].composition.compactMobile.scale<frames[0].composition.compactMobile.scale,'closing leaves room for its larger action block');
 });
 
-test('cinematic camera rejects invalid progress and data and reduced motion stays wide', () => {
-  assert.equal(typeof model.presentationForProgress, 'function');
-  const wide = { yaw: .72, pitch: .68, zoom: 1.22, target: { x: 0, y: .28, z: 0 } };
-  for (const progress of [-1, NaN, Infinity, undefined]) assert.deepEqual(model.presentationForProgress(progress), wide);
-  for (const progress of [0, .3, .7, 1]) assert.deepEqual(model.presentationForProgress(progress, { x: 5, y: 3, height: 64 }, { reduced: true }), wide);
-  for (const building of [undefined, null, {}, { x: NaN, y: Infinity, height: -10 }]) {
-    const frame = model.presentationForProgress(.3, building);
-    assert.ok([frame.yaw, frame.pitch, frame.zoom, ...Object.values(frame.target)].every(Number.isFinite));
+test('atelier rejects invalid progress and reduced motion uses complete phase poses', () => {
+  const opening=model.presentationForProgress(0);
+  for(const progress of [-1,NaN,Infinity,undefined])assert.deepEqual(model.presentationForProgress(progress),opening);
+  for(const progress of [0,.3,.7,1]){
+    const frame=model.presentationForProgress(progress,undefined,{reduced:true});
+    assert.equal(frame.formation.from,frame.formation.to);
+    assert.equal(frame.formation.mix,0);
+    assert.ok([frame.yaw,frame.pitch,frame.zoom,...Object.values(frame.target)].every(Number.isFinite));
   }
-  assert.equal(model.presentationForProgress(10).pitch, .68);
+  for(const building of [undefined,null,{}, {x:NaN,y:Infinity,height:-10}])assert.deepEqual(model.presentationForProgress(.3,building),model.presentationForProgress(.3));
 });
 
 test('presentation trust boundary bounds cinematic zoom and city target without changing interactive zoom', () => {

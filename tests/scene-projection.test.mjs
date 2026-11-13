@@ -16,7 +16,7 @@ function fixture(){
  const parts=new Map([['.building-marker',marker]]);
  const part=s=>{if(!parts.has(s))parts.set(s,{...element(),setAttribute(){},querySelector:part});return parts.get(s);};
  marker.querySelector=part;
- const building={dataset:{buildingId:'a'},querySelector:part,classList:{toggle(){}}};
+ const building={...element(),dataset:{buildingId:'a'},querySelector:part,classList:{toggle(){}}};
  const svg={...element(),querySelectorAll:()=>[building]};
  const container={...element(),clientWidth:640,clientHeight:320,getBoundingClientRect:()=>({left:100,top:50,x:100,y:50,width:640,height:320}),querySelector:()=>svg};
  const owner=mountScene3D(container);

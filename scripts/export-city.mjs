@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { writeFile } from 'node:fs/promises';
 import { citySVG } from './city.mjs';
+import { atelierSVG } from './atelier-svg.mjs';
 
 // A saved place retains its own identity when its position in the tray changes.
 const savedD = citySVG({ saved: ['d'], selected: 'd' });
@@ -17,4 +18,8 @@ for (const [name, options] of Object.entries({
   compare: { mode: 'price', scene: 'compare' },
 })) {
   await writeFile(new URL(`../assets/city-${name}.svg`, import.meta.url), citySVG(options));
+}
+
+for (const phase of ['discover','price','conditions','criteria','comparison','value','evidence','closing']) {
+  await writeFile(new URL(`../assets/atelier-${phase}.svg`, import.meta.url), atelierSVG({phase}));
 }

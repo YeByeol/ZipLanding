@@ -15,7 +15,7 @@ const corners=box=>[box.min.x,box.max.x].flatMap(x=>[box.min.y,box.max.y].flatMa
 
 test('legacy narrow canvas clipping remains reproducible while full-world fitting is explicitly optional',()=>{
  const scene=productionDiorama();try{
-  const box=new THREE.Box3().setFromObject(scene.world),camera=cameraFor(filmSnapshot(2/7).frame,1440,331);
+  const box=new THREE.Box3().setFromObject(scene.world),camera=cameraFor({yaw:.52,pitch:.76,zoom:3.4,target:{x:-2.975,y:18/78+.14,z:-1.915}},1440,331);
   const bottom=Math.max(...corners(box).map(v=>(1-v.project(camera).y)*331/2));
   assert.ok(bottom>900,'the actual previous macro frustum cuts the lower city, not merely a DOM panel');
   assert.equal(typeof module.fitOrthographicBounds,'function');
@@ -58,7 +58,7 @@ test('fit rejects invalid geometry and keeps padding in CSS pixels independent o
 test('cinematic composition keeps authored scale and puts the camera target right on desktop, centered on mobile',()=>{
  assert.equal(typeof module.compositionProjection,'function');
  const composition={desktop:{x:.72,y:.52},mobile:{x:.5,y:.43},mobileScale:1.15};
- for(const[width,height,x,y,scale]of[[1440,828,.72,.52,1],[390,780,.5,.43,1.15]]){
+ for(const[width,height,x,y,scale]of[[1440,828,.72,.52,1],[1024,704,.72,.52,1],[1000,736,.72,.52,1],[768,736,.72,.52,1],[761,780,.72,.52,1],[760,780,.5,.43,1.15],[390,780,.5,.43,1.15]]){
   for(const zoom of [1.22,3.4]){
    const projection=module.compositionProjection({width,height,zoom,composition});
    const camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,60);Object.assign(camera,projection);camera.updateProjectionMatrix();
@@ -67,6 +67,43 @@ test('cinematic composition keeps authored scale and puts the camera target righ
    assert.equal(projection.zoom,zoom*scale,'a large closeup must not be shrunk to fit the whole city');
   }
  }
- const a=module.compositionProjection({width:760,height:780,zoom:3.4,composition}),b=module.compositionProjection({width:760.001,height:780,zoom:3.4,composition});
- assert.ok(Math.abs(a.left-b.left)<.001,'responsive composition also changes continuously');
+});
+
+test('short phone compositions reserve room for the complete model without changing desktop scale',()=>{
+ const composition={desktop:{x:.63,y:.45},mobile:{x:.5,y:.32},mobileScale:.8,compactMobile:{x:.5,y:.30,scale:.6}};
+ const short=module.compositionProjection({width:390,height:676,zoom:2.2,composition});
+ const tall=module.compositionProjection({width:390,height:780,zoom:2.2,composition});
+ assert.ok(short.zoom<tall.zoom&&short.zoom>=2.2*.6);
+ assert.equal(tall.zoom,2.2*.8);
+ for(const height of [640,676,780,900]){
+  const desktop=module.compositionProjection({width:1440,height,zoom:2.2,composition});
+  assert.equal(desktop.zoom,2.2,'compact portrait fitting cannot reduce the desktop object');
+ }
+ for(let height=659;height<782;height++){
+  const a=module.compositionProjection({width:390,height,zoom:2.2,composition});
+  const b=module.compositionProjection({width:390,height:height+1,zoom:2.2,composition});
+  assert.ok(Math.abs(a.zoom-b.zoom)<.01,'viewport changes preserve continuous framing');
+ }
+});
+
+test('tablet study cameras reserve left-column space without changing phone and wide desktop',()=>{
+ const profiles=[['price',.24,.70],['criteria',.24,.68],['value',.25,.82]];
+ for(const [phase,x,scale]of profiles){
+  const frame=filmSnapshot(phases.indexOf(phase)/7).frame;
+  for(const width of [768,1000,1024,1100]){
+   const projection=module.compositionProjection({width,height:800,zoom:frame.zoom,composition:frame.composition});
+   const camera=new THREE.OrthographicCamera(-1,1,1,-1,.1,60);Object.assign(camera,projection);camera.updateProjectionMatrix();
+   const target=new THREE.Vector3(0,0,-14).project(camera);
+   assert.ok(Math.abs((target.x+1)/2-x)<1e-12,`${phase} stays in its left study column at ${width}`);
+   assert.ok(Math.abs(projection.zoom-frame.zoom*scale)<1e-12);
+  }
+  const wide=module.compositionProjection({width:1440,height:828,zoom:frame.zoom,composition:frame.composition});
+  assert.equal(wide.zoom,frame.zoom,'full desktop art direction stays intact');
+  const withoutTablet={...frame.composition};delete withoutTablet.compactDesktop;
+  assert.deepEqual(module.compositionProjection({width:390,height:780,zoom:frame.zoom,composition:frame.composition}),module.compositionProjection({width:390,height:780,zoom:frame.zoom,composition:withoutTablet}),'tablet fitting cannot change the phone composition');
+  for(let width=1100;width<1441;width++){
+   const a=module.compositionProjection({width,height:800,zoom:frame.zoom,composition:frame.composition}),b=module.compositionProjection({width:width+1,height:800,zoom:frame.zoom,composition:frame.composition});
+   assert.ok(Math.abs(a.zoom-b.zoom)<.01,'tablet recovery remains continuous');
+  }
+ }
 });

@@ -22,8 +22,8 @@ test('presentation belongs only to the noninteractive owner and respects its man
     assert.equal(typeof hero.setPresentation, 'function');
     hero.setPresentation({ yaw: .5, pitch: .86, zoom: 4.2, target: { x: -3, y: .5, z: -2 } });
     assert.equal(heroNode.dataset.viewPreset, 'story');
-    assert.equal(heroNode.dataset.viewZoom, '1.22', 'reduced motion keeps the wide camera');
-    assert.equal(heroNode.dataset.targetX, '0.0000');
+    assert.equal(heroNode.dataset.viewZoom, '4.2', 'reduced motion applies the already completed phase pose without a tracking loop');
+    assert.equal(heroNode.dataset.targetX, '-3.0000');
     assert.equal(heroNode.dataset.manualView, 'false');
     experience.setPreset('plan');
     const manual = { ...experienceNode.dataset };
@@ -67,17 +67,17 @@ test('story presentation owns its demonstrated weights, selection and highlight 
   globalThis.document={createElement:element,addEventListener(){},removeEventListener(){}};
   function container(){
     const parts=new Map();const part=s=>{if(!parts.has(s))parts.set(s,{...element(),attributes:{},setAttribute(k,v){this.attributes[k]=v;},querySelector:part});return parts.get(s);};
-    const node={dataset:{buildingId:'x'},querySelector:part,classList:{toggle(){}}};
+    const node={...element(),dataset:{buildingId:'x'},querySelector:part,querySelectorAll:selector=>selector==='.atelier-data-face'?[Object.assign(part('.building-roof'),{dataset:{faceShade:'1'}})]:[],classList:{toggle(){}}};
     const svg={...element(),querySelectorAll:()=>[node]};return{...element(),querySelector:()=>svg,parts,part};
   }
   const storyNode=container(),interactiveNode=container();let story,interactive;
   try{
     story=mountScene3D(storyNode);interactive=mountScene3D(interactiveNode,{interactive:true});
-    const frame={yaw:.62,pitch:.8,zoom:1.9,target:{x:2.975,y:.5,z:1.915},weights:{slope:80,elevation:10,age:10},selected:'x',highlightIds:['x'],saved:['a','b','c'],colorBlend:{from:'score',to:'score',mix:0}};
+    const frame={formation:{from:'evidence',to:'evidence',mix:0},yaw:.62,pitch:.8,zoom:1.9,target:{x:2.975,y:.5,z:1.915},weights:{slope:80,elevation:10,age:10},selected:'x',highlightIds:['x'],saved:['a','b','c'],colorBlend:{from:'score',to:'score',mix:0}};
     story.setPresentation(frame);
     assert.equal(storyNode.part('.building-roof').attributes.fill,'#d9d6cf');
-    assert.equal(storyNode.part('.building-outline').style.display,'');
-    assert.equal(storyNode.part('.building-missing').style.opacity,'1');
+    assert.equal(storyNode.querySelector('svg').querySelectorAll()[0].style.display,'');
+    assert.equal(storyNode.part('.building-missing').attributes.opacity,'1');
     assert.equal(storyNode.dataset.viewZoom,'1.9');
     interactive.update({mode:'price',selected:'a'});const before=interactiveNode.part('.building-roof').attributes.fill;
     interactive.setPresentation(frame);assert.equal(interactiveNode.part('.building-roof').attributes.fill,before);

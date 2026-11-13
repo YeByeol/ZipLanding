@@ -9,9 +9,9 @@ function node(dataset={}) {
  return {dataset,style:{setProperty:(k,v)=>vars.set(k,v),getPropertyValue:k=>vars.get(k)??'',removeProperty:k=>vars.delete(k)},hidden:false,tabIndex:-1,scrollTop:0,textContent:'',setAttribute:(k,v)=>attrs.set(k,String(v)),getAttribute:k=>attrs.get(k)??null,removeAttribute:k=>attrs.delete(k)};
 }
 function fixture({clock=false,progressStyle='',onPhaseChange,nav=false,legacyLinks=true}={}) {
- let p=0,low=false,time=0,nextFrame=1;const rafs=new Map();
+ let p=0,low=false,shortPhone=false,time=0,nextFrame=1;const rafs=new Map();
  const document=Object.assign(new EventTarget(),{hidden:false});
- const viewport={innerHeight:800,matchMedia:q=>({get matches(){return q==='(max-height: 620px)'&&low;}})};
+ const viewport={innerHeight:800,matchMedia:q=>({get matches(){return q==='(max-height: 620px)'&&low||q==='(max-width: 760px) and (max-height: 700px)'&&shortPhone;}})};
  if(clock){viewport.performance={now:()=>time};viewport.requestAnimationFrame=fn=>{const id=nextFrame++;rafs.set(id,fn);return id;};viewport.cancelAnimationFrame=id=>rafs.delete(id);}
  document.defaultView=viewport;
  const steps=PHASES.map((phase,i)=>({...node({storyStep:phase}),getBoundingClientRect:()=>({top:i*1120-p*7840})}));
@@ -25,7 +25,7 @@ function fixture({clock=false,progressStyle='',onPhaseChange,nav=false,legacyLin
  if(progressStyle)root.style.setProperty('--film-progress',progressStyle);
  const element=node(),frames=[],updates=[];
  const controller=mountStory({root,element,onPhaseChange,owner:{setPresentation:f=>frames.push(f),update:s=>updates.push(s)}});
- return {root,element,panels,links,fields,weights,swatches,caption,selection,frames,updates,controller,rafs,previous,next,chapterSelect,focus(node){document.activeElement=node;},active(){return document.activeElement;},seek(value,reduced=false,immediate=false){p=value;controller.updateScroll({reduced,immediate});},low(value){low=value;controller.updateScroll();},tick(dt=16){time+=dt;const callbacks=[...rafs.values()];rafs.clear();callbacks.forEach(fn=>fn(time));},visibility(hidden){document.hidden=hidden;document.dispatchEvent(new Event('visibilitychange'));}};
+ return {root,element,panels,links,fields,weights,swatches,caption,selection,frames,updates,controller,rafs,previous,next,chapterSelect,focus(node){document.activeElement=node;},active(){return document.activeElement;},seek(value,reduced=false,immediate=false){p=value;controller.updateScroll({reduced,immediate});},low(value){low=value;controller.updateScroll();},shortPhone(value){shortPhone=value;controller.updateScroll();},tick(dt=16){time+=dt;const callbacks=[...rafs.values()];rafs.clear();callbacks.forEach(fn=>fn(time));},visibility(hidden){document.hidden=hidden;document.dispatchEvent(new Event('visibilitychange'));}};
 }
 test('eight-waypoint geometry is finite and the pure phase follows chapter centers',()=>{
  for(let i=0;i<8;i++) {const result=storyPhaseForSteps(rects(PHASES.map((_,j)=>j*1120-i*1120)),800);assert.equal(result.phase,PHASES[i]);assert.equal(result.progress,i/7);}
@@ -54,20 +54,20 @@ test('eight panel fades and beats rewind exactly and metadata alone has hysteres
  assert.deepEqual(v.frames.at(-1),frame);assert.equal(v.panels[3].style.getPropertyValue('--beat-2'),beats);
  assert.equal(v.links.find(l=>l.getAttribute('aria-current')==='step').dataset.storyLink,'criteria');
 });
-test('low height exposes completed eight chapters with final truthful demo and actively wide camera',()=>{
- const v=fixture();v.seek(2/7);assert.equal(v.frames.at(-1).zoom,3.4);v.low(true);
+test('low height exposes completed eight chapters and restores the opening illustrative pose',()=>{
+ const v=fixture();v.seek(2/7);assert.equal(v.frames.at(-1).formation.from,'conditions');v.low(true);
  assert.equal(v.root.dataset.storyEnhanced,'false');assert.ok(v.panels.every(p=>!p.hidden&&p.style.opacity==='1'&&p.getAttribute('aria-hidden')==='false'));
- assert.ok(v.panels.every(p=>[1,2,3].every(i=>p.style.getPropertyValue('--beat-'+i)==='1')));assert.equal(v.frames.at(-1).zoom,1.22);
+ assert.ok(v.panels.every(p=>[1,2,3].every(i=>p.style.getPropertyValue('--beat-'+i)==='1')));assert.equal(v.frames.at(-1).formation.from,'discover');
  assert.equal(v.fields.find(f=>f.dataset.filmField==='score-a').textContent,'80');assert.equal(v.fields.find(f=>f.dataset.filmField==='rent').textContent,'35');
- v.low(false);assert.equal(v.frames.at(-1).zoom,3.4);assert.equal(v.panels.filter(p=>!p.hidden).length,1);
+ v.low(false);assert.equal(v.frames.at(-1).formation.from,'conditions');assert.equal(v.panels.filter(p=>!p.hidden).length,1);
  v.controller.destroy();assert.equal(v.root.dataset.storyEnhanced,undefined);assert.ok(v.panels.every(p=>!p.hidden));
 });
-test('reduced motion completes graphics, keeps one stable panel, missing X and stationary camera',()=>{
- const v=fixture();v.seek(6/7,true);assert.equal(v.root.dataset.storyPhase,'evidence');assert.equal(v.panels.filter(p=>!p.hidden).length,1);assert.equal(v.frames.at(-1).zoom,1.22);
+test('reduced motion completes graphics and applies an instant pose for the visible subject',()=>{
+ const v=fixture();v.seek(6/7,true);assert.equal(v.root.dataset.storyPhase,'evidence');assert.equal(v.panels.filter(p=>!p.hidden).length,1);assert.deepEqual(v.frames.at(-1).formation,{from:'evidence',to:'evidence',mix:0});
  assert.ok(v.fields.filter(f=>f.dataset.filmField.startsWith('x-')).every(f=>f.textContent==='자료 없음'&&f.dataset.missing==='true'));
  assert.equal(v.fields.find(f=>f.dataset.filmField==='peer-count').textContent,'2');
  assert.equal(v.frames.at(-1).colorBlend.from,'score');
- const center=v.frames.at(-1).target;v.seek(1,true);assert.deepEqual(v.frames.at(-1).target,center);
+ v.seek(1,true);assert.deepEqual(v.frames.at(-1).formation,{from:'closing',to:'closing',mix:0});
  v.controller.destroy();const calls=v.frames.length;v.seek(0);v.controller.update({});assert.equal(v.frames.length,calls);
 });
 
@@ -113,8 +113,8 @@ test('initial read, reduced, lowheight and visibility bypass the clock and destr
  const v=fixture({clock:true});v.seek(2/7);assert.equal(+v.root.dataset.filmProgress,2/7);assert.equal(v.rafs.size,0);
  v.seek(1);assert.equal(v.rafs.size,1);v.visibility(true);assert.equal(v.rafs.size,0);assert.equal(+v.root.dataset.filmProgress,1);
  v.seek(3/7);assert.equal(v.rafs.size,0,'hidden geometry reads snap without scheduling');v.visibility(false);assert.equal(+v.root.dataset.filmProgress,3/7);
- v.seek(6/7,true);assert.equal(v.rafs.size,0);assert.equal(+v.root.dataset.filmProgress,6/7);assert.equal(v.frames.at(-1).zoom,1.22);
- v.seek(1);v.low(true);assert.equal(v.rafs.size,0);assert.equal(+v.root.dataset.filmProgress,1);assert.equal(v.frames.at(-1).zoom,1.22);
+ v.seek(6/7,true);assert.equal(v.rafs.size,0);assert.equal(+v.root.dataset.filmProgress,6/7);assert.deepEqual(v.frames.at(-1).formation,{from:'evidence',to:'evidence',mix:0});
+ v.seek(1);v.low(true);assert.equal(v.rafs.size,0);assert.equal(+v.root.dataset.filmProgress,1);assert.deepEqual(v.frames.at(-1).formation,{from:'discover',to:'discover',mix:0});
  v.low(false);v.seek(0);assert.equal(v.rafs.size,1);const late=[...v.rafs.values()];v.controller.destroy();assert.equal(v.rafs.size,0);const calls=v.frames.length;late.forEach(fn=>fn(2000));assert.equal(v.frames.length,calls);assert.equal(v.rafs.size,0);
 });
 
@@ -164,4 +164,16 @@ test('entrance channels share the filtered clock, complete in ordinary flow and 
  v.low(true);assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='1')));
  v.low(false);v.seek(.38,true);assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='1')));
  v.controller.destroy();assert.ok(v.panels.every(panel=>names.every(name=>panel.style.getPropertyValue('--enter-'+name)==='')));
+});
+
+test('short phones expose every complete scene and resume the film on a taller viewport',()=>{
+ const v=fixture({clock:true});v.seek(5/7,false,true);v.shortPhone(true);
+ assert.equal(v.root.dataset.storyEnhanced,'false');
+ assert.ok(v.panels.every(p=>!p.hidden&&!p.inert&&p.style.opacity==='1'));
+ assert.equal(v.fields.find(f=>f.dataset.filmField==='monthly-cost').textContent,'39.17');
+ assert.equal(v.rafs.size,0);
+ v.shortPhone(false);assert.equal(v.root.dataset.storyEnhanced,'true');
+ assert.equal(v.panels.filter(p=>!p.hidden).length,1);
+ assert.equal(v.frames.at(-1).formation.from,'value');
+ v.controller.destroy();
 });

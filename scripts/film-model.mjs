@@ -4,7 +4,6 @@ import { presentationForProgress } from './scene-model.mjs';
 
 const IDS = ['a','b','c'];
 const FINAL = Object.freeze({slope:80,elevation:10,age:10});
-const COMPOSITION={desktop:{x:.72,y:.52},mobile:{x:.5,y:.43},mobileScale:1.15};
 const format = (value, digits=0) => Number.isFinite(value) ? value.toLocaleString('ko-KR',{maximumFractionDigits:digits}) : '자료 없음';
 const a = BUILDINGS[0];
 const x = BUILDINGS.find(building=>building.id==='x');
@@ -44,8 +43,8 @@ export function filmSnapshot(progress, previousPhase, {reduced=false,complete=fa
   for(const key of ['slope','elevation','year']) fields[`x-${key}`]=fieldValue(x,key);
   fields['x-score']=format(scoreBuilding(x,weights).score);
   const colors=complete?storyTimeline(0):timeline;
-  const frame={...presentationForProgress(progress,a,{reduced:reduced||complete}),
-    composition:{desktop:{...COMPOSITION.desktop},mobile:{...COMPOSITION.mobile},mobileScale:COMPOSITION.mobileScale},
+  const presentationProgress=complete?0:reduced?PHASES.indexOf(timeline.phase)/7:progress;
+  const frame={...presentationForProgress(presentationProgress,a,{reduced:reduced||complete}),
     colorBlend:{from:MODES[colors.from],to:MODES[colors.to],mix:colors.blend,continuous:true},
     weights,selected:complete?'a':selected,highlightIds:complete?['a']:highlightIds,saved:[...IDS]};
   return {timeline,beats,weights,selected,highlightIds,cards,comparison,priceBars,fields,frame};

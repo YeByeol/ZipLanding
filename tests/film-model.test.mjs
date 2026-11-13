@@ -54,17 +54,19 @@ test('price bars compare A and the two actual peers on one zero-based axis', () 
   assert.deepEqual(model.filmSnapshot(0).priceBars,snapshot.priceBars,'preferences cannot change money');
 });
 
-test('cinematic film preserves authored large zooms and constant viewport composition without global fit',()=>{
- const zooms=[1.22,1.85,3.4,1.55,1.65,1.5,3,1.22];
- for(let i=0;i<8;i++){
-  const frame=model.filmSnapshot(i/7).frame;
-  assert.equal(frame.zoom,zooms[i]);assert.equal(frame.fit,undefined);
-  assert.deepEqual(frame.composition,{desktop:{x:.72,y:.52},mobile:{x:.5,y:.43},mobileScale:1.15});
- }
+test('atelier film has different authored compositions and deterministic formations',()=>{
+ const frames=Array.from({length:8},(_,i)=>model.filmSnapshot(i/7).frame);
+ assert.ok(frames[0].composition.desktop.x>.6);assert.ok(frames[1].composition.desktop.x<.4);
+ assert.ok(frames[4].composition.desktop.x>.5&&frames[4].composition.desktop.x<.6);assert.equal(frames[4].formation.from,'comparison');
+ assert.equal(frames[5].formation.from,'value');assert.equal(frames[6].formation.from,'evidence');
  for(let i=0;i<=100;i++){
   const p=i/100,a=model.filmSnapshot(p,'discover').frame,b=model.filmSnapshot(p,'closing').frame;
   assert.deepEqual(a,b);assert.equal(a.fit,undefined);
-  for(const options of [{reduced:true},{complete:true}]){const frame=model.filmSnapshot(p,undefined,options).frame;assert.equal(frame.zoom,1.22);assert.deepEqual(frame.target,{x:0,y:.28,z:0});}
+  assert.equal(a.composition.mobile.x,.5);assert.ok(a.composition.mobile.y>=.3&&a.composition.mobile.y<=.44);
+  const reduced=model.filmSnapshot(p,undefined,{reduced:true}).frame;
+  assert.equal(reduced.formation.from,reduced.formation.to);assert.equal(reduced.formation.mix,0);
+  const complete=model.filmSnapshot(p,undefined,{complete:true}).frame;
+  assert.equal(complete.formation.from,'discover');assert.equal(complete.formation.to,'discover');
  }
 });
 
@@ -84,9 +86,17 @@ test('all eight chapters have deterministic scroll beats and completed accessibl
     const snapshot=model.filmSnapshot(3/7,'criteria',options);
     assert.ok(Object.values(snapshot.beats).flat().every(v=>v===1));
     assert.deepEqual(snapshot.weights,{slope:80,elevation:10,age:10});
-    assert.equal(snapshot.frame.zoom,1.22);
+    assert.equal(snapshot.frame.formation.from,options.complete?'discover':'criteria');
     assert.equal(snapshot.fields.rent,'35');
   }
+});
+
+test('reduced formation follows the authoritative text phase on both sides of hysteresis',()=>{
+ for(const [progress,previous,expected] of [[5.5/7+.001,'value','value'],[5.5/7-.001,'evidence','evidence']]){
+  const snapshot=model.filmSnapshot(progress,previous,{reduced:true});
+  assert.equal(snapshot.timeline.phase,expected);
+  assert.deepEqual(snapshot.frame.formation,{from:expected,to:expected,mix:0});
+ }
 });
 
 test('automatic criteria colors stay continuous across discrete interactive score bins',async()=>{

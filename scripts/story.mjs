@@ -52,7 +52,10 @@ export function mountStory({root,element,owner,onPhaseChange}) {
   const originalLinks=links.map(link=>({link,aria:link.getAttribute('aria-current')}));
   const viewport=root?.ownerDocument?.defaultView;
   const lowHeight=viewport?.matchMedia?.('(max-height: 620px)');
-  let enhanced=!(lowHeight?.matches??viewport?.innerHeight<=620);
+  // Dense proof scenes need a real model band, not a cropped sliver on short phones.
+  const shortPhone=viewport?.matchMedia?.('(max-width: 760px) and (max-height: 700px)');
+  const useDocumentFlow=()=>Boolean(lowHeight?.matches??viewport?.innerHeight<=620)||Boolean(shortPhone?.matches);
+  let enhanced=!useDocumentFlow();
   let reduced=viewport?.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches??false;
   let progress=0,targetProgress=0,phase,presentationKey,fieldsKey,destroyed=false,hasRead=false,frame=null,lastTime=null;
   const document=root?.ownerDocument;
@@ -141,7 +144,7 @@ export function mountStory({root,element,owner,onPhaseChange}) {
   }
   function updateScroll({reduced:preference=reduced,immediate=false}={}){
     if(destroyed)return;
-    const nextEnhanced=!(lowHeight?.matches??viewport?.innerHeight<=620);
+    const nextEnhanced=!useDocumentFlow();
     const modeChanged=enhanced!==nextEnhanced||reduced!==preference;
     if(modeChanged)presentationKey=undefined;
     enhanced=nextEnhanced;reduced=preference;
