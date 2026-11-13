@@ -15,7 +15,7 @@ const CAMERA = [
 ];
 const MOBILE=[[.43,1.25],[.40,1.1],[.41,1.15],[.34,.95],[.31,1.1],[.31,1.25],[.32,.8],[.43,1.25]];
 const COMPACT=[[.405,1.05],[.38,.95],[.40,1.05],[.34,.78],[.31,1.0],[.285,1.05],[.30,.60],[.36,.85]];
-const TABLET=[null,[.24,.70],null,[.24,.68],null,[.25,.82],null,null];
+const TABLET=[null,[.24,.70],null,[.24,.68],null,[.25,.82],[.70,.80],null];
 
 export function clampFormation(value) {
   const from = PHASES.includes(value?.from) ? value.from : 'discover';
