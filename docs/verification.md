@@ -457,4 +457,4 @@ Colored analysis plates and the decorative connector runtime/DOM hooks were remo
 
 Limits: desktop browser viewport simulation and actual WebGL execution do not establish touch behavior or frame-rate comfort on every physical phone. The map is a fictional spatial sample; real terrain, buildings and live property records remain outside this landing's data scope. The optional 24-place experience remains independently controlled.
 
-Public deployment receipt follows after workflow completion and public readback.
+Public deployment receipt: source `f41407783cbc654c57fb0af610fde3072d4203cb`; GitHub Actions run `43346495001` completed successfully. The public URL returned all 45 shipped files byte-for-byte equal to this source. Public installed-browser capture at 1440×900 and 390×844 covered all eight chapters, 132/132 layout checks, no script errors. Evidence: `qa/sculpture/public/bytes.json`, `qa/sculpture/public/layout.json` and the matching scene screenshots. [Workflow](https://github.com/YeByeol/ZipLanding/actions/runs/43346495001).

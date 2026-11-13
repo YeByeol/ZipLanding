@@ -25,7 +25,7 @@
 - [x] Root: remove connector runtime, DOM hooks and obsolete tests. Apply independent whole-page critique in one coherent HTML/CSS batch; adjust closing composition and semantic legend/copy where needed.
 - [x] Research owner: record primary-source resource/license/size evidence and relevant local 3D skill guidance. Do not add large assets unless they improve the selected visual world.
 - [x] Root: regenerate static exports; run `npm test` and `npm run check`. Inspect desktop/mobile together, fix observed issues in a batch, then one confirmation pass. Include no-WebGL/reduced-motion/manual demo and transition checks.
-- [ ] Root: commit, publish through the existing GitHub Pages workflow, and verify public asset equality and live rendering. Record evidence and limits in `docs/verification.md`.
+- [x] Root: commit, publish through the existing GitHub Pages workflow, and verify public asset equality and live rendering. Record evidence and limits in `docs/verification.md`.
 
 ## Additional user direction: a 3D map sample
 
